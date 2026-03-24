@@ -1,0 +1,250 @@
+/**
+ * Protocol Extractor
+ *
+ * Uses Claude to analyze ingested content and extract structured protocols
+ * with ranked tools. This is the core value of the app — turning unstructured
+ * podcast/newsletter content into actionable, ranked protocol toolkits.
+ */
+
+import { createClient } from "@supabase/supabase-js";
+import Anthropic from "@anthropic-ai/sdk";
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+function getAnthropic() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+  });
+}
+
+interface ExtractedProtocol {
+  title: string;
+  slug: string;
+  category: string;
+  description: string;
+  difficulty: "easy" | "moderate" | "advanced";
+  time_commitment: string;
+  tags: string[];
+  tools: {
+    title: string;
+    description: string;
+    instructions: string;
+    effectiveness_rank: number;
+    timing?: string;
+    duration?: string;
+    frequency?: string;
+    notes?: string;
+  }[];
+}
+
+const VALID_CATEGORIES = [
+  "sleep",
+  "focus",
+  "exercise",
+  "stress",
+  "nutrition",
+  "hormones",
+  "cold-heat",
+  "light",
+  "motivation",
+  "mental-health",
+];
+
+/**
+ * Extract protocols from a batch of content chunks using Claude
+ */
+export async function extractProtocolsFromContent(
+  topic: string,
+  chunks: { content: string; source_title: string }[]
+): Promise<ExtractedProtocol[]> {
+  const anthropic = getAnthropic();
+  const combinedContent = chunks
+    .map((c) => `--- ${c.source_title} ---\n${c.content}`)
+    .join("\n\n");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    system: `You are a health protocol extraction system. Your job is to analyze content from the Huberman Lab podcast and related sources, then extract structured, actionable health protocols.
+
+Each protocol is a toolkit for solving a specific health problem (e.g., "Improve Sleep Quality", "Reduce Stress Quickly").
+Each protocol contains TOOLS ranked from most effective to least effective.
+
+Guidelines:
+- Be specific and actionable
+- Include dosages, timings, and frequencies where mentioned
+- Rank tools by effectiveness (1 = most effective)
+- Use simple language
+- Include safety notes for supplements
+- Categories must be one of: ${VALID_CATEGORIES.join(", ")}
+- Slugs must be lowercase-kebab-case`,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze the following content about "${topic}" and extract structured health protocols.
+
+Content:
+${combinedContent.slice(0, 8000)}
+
+Return a JSON array of protocols. Each protocol should have:
+- title: Clear name like "Optimize Sleep Quality" or "Morning Focus Protocol"
+- slug: kebab-case URL slug
+- category: one of [${VALID_CATEGORIES.join(", ")}]
+- description: 1-2 sentence description
+- difficulty: easy | moderate | advanced
+- time_commitment: e.g. "5-10 min/day", "30 min 3x/week"
+- tags: relevant keyword tags
+- tools: array of individual tools, each with:
+  - title: tool name
+  - description: what it does
+  - instructions: step-by-step how to do it
+  - effectiveness_rank: 1 = most effective
+  - timing: when to do it (optional)
+  - duration: how long (optional)
+  - frequency: how often (optional)
+  - notes: safety info or tips (optional)
+
+Return ONLY valid JSON array, no other text.`,
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+
+  try {
+    // Extract JSON from response (handle markdown code blocks)
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("No JSON array found in response");
+      return [];
+    }
+    return JSON.parse(jsonMatch[0]) as ExtractedProtocol[];
+  } catch (err) {
+    console.error("Error parsing protocol JSON:", err);
+    return [];
+  }
+}
+
+/**
+ * Store extracted protocols in Supabase
+ */
+export async function storeProtocols(protocols: ExtractedProtocol[]) {
+  const supabase = getSupabase();
+  let stored = 0;
+
+  for (const protocol of protocols) {
+    // Validate category
+    if (!VALID_CATEGORIES.includes(protocol.category)) {
+      console.warn(
+        `Invalid category "${protocol.category}" for "${protocol.title}", skipping`
+      );
+      continue;
+    }
+
+    // Insert protocol
+    const { data: inserted, error } = await supabase
+      .from("protocols")
+      .upsert(
+        {
+          title: protocol.title,
+          slug: protocol.slug,
+          category: protocol.category,
+          description: protocol.description,
+          effectiveness_rank: stored + 1,
+          difficulty: protocol.difficulty,
+          time_commitment: protocol.time_commitment,
+          tags: protocol.tags,
+          source_type: "podcast",
+        },
+        { onConflict: "slug" }
+      )
+      .select("id")
+      .single();
+
+    if (error || !inserted) {
+      console.error(`Error storing protocol "${protocol.title}":`, error);
+      continue;
+    }
+
+    // Insert tools
+    for (const tool of protocol.tools) {
+      const { error: toolError } = await supabase
+        .from("protocol_tools")
+        .insert({
+          protocol_id: inserted.id,
+          title: tool.title,
+          description: tool.description,
+          instructions: tool.instructions,
+          effectiveness_rank: tool.effectiveness_rank,
+          timing: tool.timing,
+          duration: tool.duration,
+          frequency: tool.frequency,
+          notes: tool.notes,
+        });
+
+      if (toolError) {
+        console.error(`Error storing tool "${tool.title}":`, toolError);
+      }
+    }
+
+    stored++;
+    console.log(
+      `Stored protocol "${protocol.title}" with ${protocol.tools.length} tools`
+    );
+  }
+
+  return stored;
+}
+
+/**
+ * Run extraction for all major health topics
+ */
+export async function runProtocolExtraction() {
+  const supabase = getSupabase();
+  const topics = [
+    "sleep optimization and sleep quality",
+    "focus and concentration improvement",
+    "exercise performance and recovery",
+    "stress management and anxiety reduction",
+    "nutrition and supplementation",
+    "hormonal health and optimization",
+    "cold exposure and heat therapy",
+    "light exposure and circadian rhythm",
+    "motivation dopamine and habit formation",
+    "mental health depression and mood",
+  ];
+
+  let totalProtocols = 0;
+
+  for (const topic of topics) {
+    console.log(`Extracting protocols for topic: ${topic}`);
+
+    // Get relevant chunks from the database
+    const { data: chunks } = await supabase
+      .from("content_chunks")
+      .select("content, source_title")
+      .ilike("content", `%${topic.split(" ")[0]}%`)
+      .limit(20);
+
+    if (!chunks || chunks.length === 0) {
+      console.log(`No content found for "${topic}", skipping`);
+      continue;
+    }
+
+    const protocols = await extractProtocolsFromContent(topic, chunks);
+    const stored = await storeProtocols(protocols);
+    totalProtocols += stored;
+
+    // Rate limiting
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+
+  console.log(`Protocol extraction complete: ${totalProtocols} protocols stored`);
+  return totalProtocols;
+}
