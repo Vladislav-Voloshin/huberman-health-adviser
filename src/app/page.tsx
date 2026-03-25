@@ -9,9 +9,9 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              H
+              V
             </div>
-            <span className="font-semibold text-lg">Huberman Health</span>
+            <span className="font-semibold text-lg">Vitastack</span>
           </div>
           <Link href="/auth">
             <Button variant="outline" size="sm">
@@ -28,9 +28,8 @@ export default function HomePage() {
             Science-Based Health Protocols
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Practical tools from the Huberman Lab podcast, ranked by
-            effectiveness. Start with what works most, build your routine
-            step by step.
+            Evidence-based health tools ranked by effectiveness. Start with
+            what works most, build your optimal routine step by step.
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/auth">
@@ -68,7 +67,7 @@ export default function HomePage() {
       <footer className="border-t border-border/40 px-6 py-4">
         <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
           <p>
-            Based on publicly available content from the Huberman Lab podcast.
+            Protocols sourced from peer-reviewed research and expert analysis.
             Not medical advice.
           </p>
         </div>

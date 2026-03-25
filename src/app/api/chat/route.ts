@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Build system prompt
-  let systemPrompt = `You are a health adviser powered by the Huberman Lab podcast and related research.
-You provide evidence-based, practical health advice drawn from neuroscience and peer-reviewed research discussed by Dr. Andrew Huberman.
+  let systemPrompt = `You are Vitastack, a science-based health adviser.
+You provide evidence-based, practical health advice drawn from neuroscience and peer-reviewed research.
 
 Key guidelines:
 - Be practical and actionable — give specific tools and protocols

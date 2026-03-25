@@ -70,7 +70,7 @@ export async function extractProtocolsFromContent(
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
-    system: `You are a health protocol extraction system. Your job is to analyze content from the Huberman Lab podcast and related sources, then extract structured, actionable health protocols.
+    system: `You are a health protocol extraction system. Your job is to analyze content from science-based health sources and extract structured, actionable health protocols.
 
 Each protocol is a toolkit for solving a specific health problem (e.g., "Improve Sleep Quality", "Reduce Stress Quickly").
 Each protocol contains TOOLS ranked from most effective to least effective.

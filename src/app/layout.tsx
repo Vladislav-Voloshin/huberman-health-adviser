@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Huberman Health Adviser",
+  title: "Vitastack — Science-Based Health Protocols",
   description:
-    "Evidence-based health protocols powered by the Huberman Lab podcast, newsletters, and research",
+    "Evidence-based health protocols ranked by effectiveness. Build your optimal routine with science-backed tools for sleep, focus, exercise, and more.",
 };
 
 export default function RootLayout({

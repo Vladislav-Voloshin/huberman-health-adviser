@@ -1,7 +1,7 @@
 /**
- * Huberman Lab Podcast Episode Scraper
+ * Podcast Episode Scraper
  *
- * Scrapes episode data from the Huberman Lab website and YouTube.
+ * Scrapes episode data from podcast RSS feeds.
  * Stores metadata in Supabase, transcripts are processed separately.
  */
 
@@ -26,7 +26,7 @@ interface EpisodeData {
 }
 
 /**
- * Fetches episode list from Huberman Lab RSS feed
+ * Fetches episode list from podcast RSS feed
  */
 export async function fetchEpisodesFromRSS(): Promise<EpisodeData[]> {
   const RSS_URL = "https://feeds.megaphone.fm/hubermanlab";

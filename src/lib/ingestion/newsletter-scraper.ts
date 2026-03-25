@@ -1,7 +1,7 @@
 /**
- * Huberman Lab Newsletter Content Ingestion
+ * Newsletter Content Ingestion
  *
- * Scrapes newsletter archive from the Huberman Lab website.
+ * Scrapes newsletter archive from health science sources.
  * Newsletters contain concise protocol summaries and tool recommendations.
  */
 
@@ -23,7 +23,7 @@ interface NewsletterData {
 }
 
 /**
- * Scrape newsletter listing from Huberman Lab website
+ * Scrape newsletter listing from source website
  */
 export async function fetchNewsletterList(): Promise<NewsletterData[]> {
   const BASE_URL = "https://www.hubermanlab.com/newsletter";

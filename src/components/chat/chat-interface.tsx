@@ -106,9 +106,8 @@ export function ChatInterface({
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-20">
             <p className="text-lg font-medium">Ask me anything about health</p>
             <p className="text-sm mt-1 max-w-md">
-              I&apos;m powered by the Huberman Lab podcast, newsletters, and
-              research. Ask about sleep, exercise, supplements, or any health
-              topic.
+              I use science-backed protocols and research to help you optimize
+              sleep, exercise, supplements, and more.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 max-w-lg">
               {[
