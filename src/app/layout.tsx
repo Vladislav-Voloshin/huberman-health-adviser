@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vitastack — Science-Based Health Protocols",
+  title: "Craftwell — Science-Based Health Protocols",
   description:
     "Evidence-based health protocols ranked by effectiveness. Build your optimal routine with science-backed tools for sleep, focus, exercise, and more.",
 };

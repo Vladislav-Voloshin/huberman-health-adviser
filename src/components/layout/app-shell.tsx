@@ -19,9 +19,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-border/40 px-4 py-3 flex items-center justify-between">
         <Link href="/protocols" className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs">
-            V
+            C
           </div>
-          <span className="font-semibold">Vitastack</span>
+          <span className="font-semibold">Craftwell</span>
         </Link>
       </header>
 

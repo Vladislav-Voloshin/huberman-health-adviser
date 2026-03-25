@@ -9,9 +9,9 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              V
+              C
             </div>
-            <span className="font-semibold text-lg">Vitastack</span>
+            <span className="font-semibold text-lg">Craftwell</span>
           </div>
           <Link href="/auth">
             <Button variant="outline" size="sm">

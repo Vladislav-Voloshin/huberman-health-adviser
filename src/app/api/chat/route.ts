@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Build system prompt
-  let systemPrompt = `You are Vitastack, a science-based health adviser.
+  let systemPrompt = `You are Craftwell, a science-based health adviser.
 You provide evidence-based, practical health advice drawn from neuroscience and peer-reviewed research.
 
 Key guidelines:
