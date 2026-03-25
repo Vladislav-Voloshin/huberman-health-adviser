@@ -15,7 +15,7 @@ function getSupabase() {
 }
 
 interface ChunkInput {
-  source_type: "podcast" | "newsletter" | "book" | "research";
+  source_type: "podcast" | "newsletter" | "book" | "research" | "supplement";
   source_title: string;
   source_id: string;
   content: string;
