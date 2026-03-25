@@ -80,7 +80,15 @@ export async function fetchEpisodesFromRSS(): Promise<EpisodeData[]> {
     });
   }
 
-  return episodes;
+  // Deduplicate by episode_number (keep first occurrence)
+  const seen = new Set<number>();
+  const deduped = episodes.filter((ep) => {
+    if (seen.has(ep.episode_number)) return false;
+    seen.add(ep.episode_number);
+    return true;
+  });
+
+  return deduped;
 }
 
 /**
