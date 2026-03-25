@@ -7,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
+interface UserProtocol {
+  id: string;
+  is_active: boolean;
+  started_at: string;
+  protocols: { id: string; title: string; slug: string; category: string; description: string };
+}
+
 interface ProfileViewProps {
   profile: {
     email: string;
@@ -21,10 +28,7 @@ interface ProfileViewProps {
     stress_level: number;
     focus_areas: string[];
   } | null;
-  activeProtocols: {
-    id: string;
-    protocols: { title: string; category: string };
-  }[];
+  activeProtocols: UserProtocol[];
 }
 
 export function ProfileView({
@@ -116,26 +120,57 @@ export function ProfileView({
         </Card>
       )}
 
-      {activeProtocols.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Active Protocols</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">My Protocol Stack</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activeProtocols.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">
+                No active protocols yet. Browse protocols and add them to your
+                daily stack.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => router.push("/protocols")}
+              >
+                Browse Protocols
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
               {activeProtocols.map((up) => (
                 <div
                   key={up.id}
-                  className="flex items-center justify-between text-sm"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border/40 hover:border-border transition-colors cursor-pointer"
+                  onClick={() =>
+                    router.push(`/protocols/${up.protocols.slug}`)
+                  }
                 >
-                  <span>{up.protocols.title}</span>
-                  <Badge variant="secondary">{up.protocols.category}</Badge>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {up.protocols.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {up.protocols.description}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="shrink-0">
+                    {up.protocols.category}
+                  </Badge>
                 </div>
               ))}
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Added {activeProtocols.length} protocol
+                {activeProtocols.length !== 1 ? "s" : ""} to your stack
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         Sign Out

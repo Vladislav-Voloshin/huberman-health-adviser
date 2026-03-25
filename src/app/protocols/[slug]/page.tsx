@@ -25,9 +25,29 @@ export default async function ProtocolDetailPage({
     .eq("protocol_id", protocol.id)
     .order("effectiveness_rank");
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let isActive = false;
+  if (user) {
+    const { data: userProtocol } = await supabase
+      .from("user_protocols")
+      .select("is_active")
+      .eq("user_id", user.id)
+      .eq("protocol_id", protocol.id)
+      .single();
+    isActive = userProtocol?.is_active ?? false;
+  }
+
   return (
     <AppShell>
-      <ProtocolDetail protocol={protocol} tools={tools || []} />
+      <ProtocolDetail
+        protocol={protocol}
+        tools={tools || []}
+        isActive={isActive}
+        isLoggedIn={!!user}
+      />
     </AppShell>
   );
 }

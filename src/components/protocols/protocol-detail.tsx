@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,10 +33,33 @@ interface Tool {
 export function ProtocolDetail({
   protocol,
   tools,
+  isActive: initialActive = false,
+  isLoggedIn = false,
 }: {
   protocol: Protocol;
   tools: Tool[];
+  isActive?: boolean;
+  isLoggedIn?: boolean;
 }) {
+  const [isActive, setIsActive] = useState(initialActive);
+  const [loading, setLoading] = useState(false);
+
+  async function toggleProtocol() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/protocols/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          protocol_id: protocol.id,
+          action: isActive ? "deactivate" : "activate",
+        }),
+      });
+      if (res.ok) setIsActive(!isActive);
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
@@ -55,6 +79,20 @@ export function ProtocolDetail({
             <Badge variant="outline">{protocol.time_commitment}</Badge>
           )}
         </div>
+        {isLoggedIn && (
+          <Button
+            onClick={toggleProtocol}
+            disabled={loading}
+            variant={isActive ? "outline" : "default"}
+            className="mt-2"
+          >
+            {loading
+              ? "..."
+              : isActive
+                ? "Remove from My Protocols"
+                : "Add to My Protocols"}
+          </Button>
+        )}
       </div>
 
       <Separator />
