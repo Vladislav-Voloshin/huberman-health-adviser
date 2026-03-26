@@ -1,0 +1,112 @@
+/**
+ * E2E Tests: AI Chat
+ *
+ * Tests the chat interface, message sending, streaming responses,
+ * suggestion buttons, and session management.
+ */
+
+import { test, expect } from "@playwright/test";
+import { signInTestUser } from "./helpers";
+
+test.describe("Chat Interface", () => {
+  test.beforeEach(async ({ page }) => {
+    await signInTestUser(page);
+    await page.goto("/chat");
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("displays empty chat state with suggestions", async ({ page }) => {
+    await expect(
+      page.getByText(/ask me anything about health/i)
+    ).toBeVisible();
+
+    // Should show suggestion buttons
+    const suggestions = [
+      "How can I improve my sleep quality?",
+      "What's the best morning routine for focus?",
+      "Cold exposure benefits and protocol",
+      "Best supplements for stress management",
+    ];
+
+    for (const suggestion of suggestions) {
+      await expect(page.getByText(suggestion)).toBeVisible();
+    }
+  });
+
+  test("has message input and send button", async ({ page }) => {
+    await expect(
+      page.getByPlaceholder(/ask about health protocols/i)
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /send/i })).toBeVisible();
+  });
+
+  test("send button is disabled when input is empty", async ({ page }) => {
+    const sendBtn = page.getByRole("button", { name: /send/i });
+    await expect(sendBtn).toBeDisabled();
+  });
+
+  test("send button enables when text is entered", async ({ page }) => {
+    const input = page.getByPlaceholder(/ask about health protocols/i);
+    await input.fill("How do I sleep better?");
+
+    const sendBtn = page.getByRole("button", { name: /send/i });
+    await expect(sendBtn).toBeEnabled();
+  });
+
+  test("clicking suggestion fills the input", async ({ page }) => {
+    const suggestion = page.getByText(
+      "How can I improve my sleep quality?"
+    );
+    await suggestion.click();
+
+    const input = page.getByPlaceholder(/ask about health protocols/i);
+    await expect(input).toHaveValue("How can I improve my sleep quality?");
+  });
+
+  test("sending a message shows user bubble and streaming response", async ({
+    page,
+  }) => {
+    const input = page.getByPlaceholder(/ask about health protocols/i);
+    await input.fill("What is cold exposure?");
+
+    const sendBtn = page.getByRole("button", { name: /send/i });
+    await sendBtn.click();
+
+    // User message should appear
+    await expect(page.getByText("What is cold exposure?")).toBeVisible();
+
+    // Assistant response should start streaming (wait up to 15 seconds)
+    await page.waitForSelector('[class*="bg-muted"]', { timeout: 15000 });
+
+    // Eventually should have some response text
+    const assistantBubble = page.locator('[class*="bg-muted"]').first();
+    await expect(assistantBubble).toBeVisible();
+
+    // Wait for streaming to complete (the cursor disappears)
+    await page.waitForTimeout(10000);
+
+    const responseText = await assistantBubble.textContent();
+    expect(responseText?.length).toBeGreaterThan(10);
+  });
+
+  test("can send message with Enter key", async ({ page }) => {
+    const input = page.getByPlaceholder(/ask about health protocols/i);
+    await input.fill("Hello");
+    await input.press("Enter");
+
+    // User message should appear
+    await expect(page.getByText("Hello")).toBeVisible();
+  });
+
+  test("Shift+Enter adds newline instead of sending", async ({ page }) => {
+    const input = page.getByPlaceholder(/ask about health protocols/i);
+    await input.fill("Line 1");
+    await input.press("Shift+Enter");
+    await input.type("Line 2");
+
+    // Should still have text in input (not sent)
+    const value = await input.inputValue();
+    expect(value).toContain("Line 1");
+    expect(value).toContain("Line 2");
+  });
+});

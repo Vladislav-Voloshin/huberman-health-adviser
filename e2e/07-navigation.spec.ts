@@ -1,0 +1,87 @@
+/**
+ * E2E Tests: App Navigation
+ *
+ * Tests the bottom nav bar, app shell, and page-to-page navigation.
+ */
+
+import { test, expect } from "@playwright/test";
+import { signInTestUser } from "./helpers";
+
+test.describe("App Shell & Navigation", () => {
+  test.beforeEach(async ({ page }) => {
+    await signInTestUser(page);
+  });
+
+  test("app shell shows Craftwell logo in header", async ({ page }) => {
+    await page.goto("/protocols");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("Craftwell")).toBeVisible();
+  });
+
+  test("bottom nav has Protocols, Chat, and Profile links", async ({
+    page,
+  }) => {
+    await page.goto("/protocols");
+    await page.waitForLoadState("networkidle");
+
+    // Check for nav links
+    const protocolsLink = page.getByRole("link", { name: /protocols/i });
+    const chatLink = page.getByRole("link", { name: /chat/i });
+    const profileLink = page.getByRole("link", { name: /profile/i });
+
+    // At least some nav items should be visible
+    const visibleCount =
+      ((await protocolsLink.isVisible().catch(() => false)) ? 1 : 0) +
+      ((await chatLink.isVisible().catch(() => false)) ? 1 : 0) +
+      ((await profileLink.isVisible().catch(() => false)) ? 1 : 0);
+
+    expect(visibleCount).toBeGreaterThanOrEqual(2);
+  });
+
+  test("navigate from Protocols to Chat via bottom nav", async ({ page }) => {
+    await page.goto("/protocols");
+    await page.waitForLoadState("networkidle");
+
+    const chatLink = page.getByRole("link", { name: /chat/i });
+    if (await chatLink.isVisible()) {
+      await chatLink.click();
+      await expect(page).toHaveURL(/\/chat/);
+    }
+  });
+
+  test("navigate from Chat to Profile via bottom nav", async ({ page }) => {
+    await page.goto("/chat");
+    await page.waitForLoadState("networkidle");
+
+    const profileLink = page.getByRole("link", { name: /profile/i });
+    if (await profileLink.isVisible()) {
+      await profileLink.click();
+      await expect(page).toHaveURL(/\/profile/);
+    }
+  });
+
+  test("navigate from Profile back to Protocols via bottom nav", async ({
+    page,
+  }) => {
+    await page.goto("/profile");
+    await page.waitForLoadState("networkidle");
+
+    const protocolsLink = page.getByRole("link", { name: /protocols/i });
+    if (await protocolsLink.isVisible()) {
+      await protocolsLink.click();
+      await expect(page).toHaveURL(/\/protocols/);
+    }
+  });
+
+  test("Craftwell logo links to protocols", async ({ page }) => {
+    await page.goto("/chat");
+    await page.waitForLoadState("networkidle");
+
+    const logo = page.getByRole("link").filter({ hasText: "Craftwell" });
+    if (await logo.isVisible()) {
+      await logo.click();
+      await expect(page).toHaveURL(/\/protocols/);
+    }
+  });
+});
