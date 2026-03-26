@@ -179,7 +179,7 @@ async function main() {
   let processed = 0;
   let withResults = 0;
 
-  for (const tool of tools as ProtocolTool[]) {
+  for (const tool of tools as unknown as ProtocolTool[]) {
     const protocolTitle = tool.protocols?.title || "Unknown Protocol";
     const protocolCategory = tool.protocols?.category || "health";
 

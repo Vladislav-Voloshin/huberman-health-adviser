@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ProfileEditor } from "./profile-editor";
 
 interface UserProtocol {
   id: string;
@@ -15,30 +16,41 @@ interface UserProtocol {
   protocols: { id: string; title: string; slug: string; category: string; description: string };
 }
 
+export interface ProfileData {
+  email: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  age?: number | null;
+  phone?: string | null;
+  created_at: string;
+}
+
+export interface SurveyData {
+  health_goals: string[];
+  sleep_quality: number;
+  exercise_frequency: string;
+  stress_level: number;
+  supplement_experience?: string;
+  focus_areas: string[];
+}
+
 interface ProfileViewProps {
-  profile: {
-    email: string;
-    display_name?: string;
-    phone?: string;
-    created_at: string;
-  } | null;
-  survey: {
-    health_goals: string[];
-    sleep_quality: number;
-    exercise_frequency: string;
-    stress_level: number;
-    focus_areas: string[];
-  } | null;
+  profile: ProfileData | null;
+  survey: SurveyData | null;
   activeProtocols: UserProtocol[];
 }
 
 export function ProfileView({
-  profile,
-  survey,
+  profile: initialProfile,
+  survey: initialSurvey,
   activeProtocols,
 }: ProfileViewProps) {
   const router = useRouter();
   const supabase = createClient();
+  const [profile, setProfile] = useState(initialProfile);
+  const [survey, setSurvey] = useState(initialSurvey);
+  const [editing, setEditing] = useState(false);
   const [streaks, setStreaks] = useState<{ protocol_title: string; streak: number; longest_streak: number; total_days: number }[]>([]);
 
   const fetchStreaks = useCallback(async () => {
@@ -69,22 +81,60 @@ export function ProfileView({
     router.push("/");
   }
 
+  function handleSave(updatedProfile: ProfileData, updatedSurvey: SurveyData) {
+    setProfile(updatedProfile);
+    setSurvey(updatedSurvey);
+    setEditing(false);
+  }
+
   const totalCompletionDays = streaks.reduce((sum, s) => sum + s.total_days, 0);
   const bestStreak = Math.max(0, ...streaks.map((s) => s.longest_streak));
 
+  const displayName = profile?.display_name
+    || [profile?.first_name, profile?.last_name].filter(Boolean).join(" ")
+    || null;
+
+  if (editing) {
+    return (
+      <ProfileEditor
+        profile={profile}
+        survey={survey}
+        onSave={handleSave}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Profile</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Profile</h1>
+        <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+          Edit Profile
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
+          {displayName && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Name</span>
+              <span>{displayName}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Email</span>
             <span>{profile?.email}</span>
           </div>
+          {profile?.age && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Age</span>
+              <span>{profile.age}</span>
+            </div>
+          )}
           {profile?.phone && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Phone</span>
@@ -105,16 +155,19 @@ export function ProfileView({
       {survey && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Health Profile</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Health Profile</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="text-xs">
+                Edit
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <span className="text-sm text-muted-foreground">Goals</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {survey.health_goals.map((g) => (
-                  <Badge key={g} variant="secondary">
-                    {g}
-                  </Badge>
+                  <Badge key={g} variant="secondary">{g}</Badge>
                 ))}
               </div>
             </div>
@@ -132,15 +185,19 @@ export function ProfileView({
                 <span className="text-muted-foreground">Exercise</span>
                 <p className="font-medium">{survey.exercise_frequency}</p>
               </div>
+              {survey.supplement_experience && (
+                <div>
+                  <span className="text-muted-foreground">Supplements</span>
+                  <p className="font-medium">{survey.supplement_experience}</p>
+                </div>
+              )}
             </div>
             <Separator />
             <div>
               <span className="text-sm text-muted-foreground">Focus Areas</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {survey.focus_areas.map((a) => (
-                  <Badge key={a} variant="outline">
-                    {a}
-                  </Badge>
+                  <Badge key={a} variant="outline">{a}</Badge>
                 ))}
               </div>
             </div>
@@ -156,15 +213,9 @@ export function ProfileView({
           {activeProtocols.length === 0 ? (
             <div className="text-center py-4">
               <p className="text-sm text-muted-foreground">
-                No active protocols yet. Browse protocols and add them to your
-                daily stack.
+                No active protocols yet. Browse protocols and add them to your daily stack.
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => router.push("/protocols")}
-              >
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => router.push("/protocols")}>
                 Browse Protocols
               </Button>
             </div>
@@ -174,40 +225,29 @@ export function ProfileView({
                 <div
                   key={up.id}
                   className="flex items-center gap-3 p-3 rounded-lg border border-border/40 hover:border-border transition-colors cursor-pointer"
-                  onClick={() =>
-                    router.push(`/protocols/${up.protocols.slug}`)
-                  }
+                  onClick={() => router.push(`/protocols/${up.protocols.slug}`)}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {up.protocols.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {up.protocols.description}
-                    </p>
+                    <p className="text-sm font-medium truncate">{up.protocols.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{up.protocols.description}</p>
                   </div>
-                  <Badge variant="secondary" className="shrink-0">
-                    {up.protocols.category}
-                  </Badge>
+                  <Badge variant="secondary" className="shrink-0">{up.protocols.category}</Badge>
                 </div>
               ))}
               <p className="text-xs text-muted-foreground text-center pt-2">
-                Added {activeProtocols.length} protocol
-                {activeProtocols.length !== 1 ? "s" : ""} to your stack
+                Added {activeProtocols.length} protocol{activeProtocols.length !== 1 ? "s" : ""} to your stack
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Streaks & Completion Stats */}
       {activeProtocols.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Streaks & Stats</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Summary stats */}
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="p-3 rounded-lg bg-muted">
                 <p className="text-2xl font-bold">{activeProtocols.length}</p>
@@ -222,7 +262,6 @@ export function ProfileView({
                 <p className="text-xs text-muted-foreground">Best Streak</p>
               </div>
             </div>
-            {/* Per-protocol streaks */}
             {streaks.length > 0 && (
               <div className="space-y-2">
                 <Separator />
