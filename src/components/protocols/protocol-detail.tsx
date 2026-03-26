@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ProtocolToolCard } from "./protocol-tool-card";
+import { ProtocolProgress } from "./protocol-progress";
 
 interface Protocol {
   id: string;
@@ -129,17 +131,12 @@ export function ProtocolDetail({
           }
           return next;
         });
-        // Refresh streaks after toggle
         fetchStreaks();
       }
     } finally {
       setTogglingToolId(null);
     }
   }
-
-  const completedCount = completedToolIds.size;
-  const totalTools = tools.length;
-  const progressPct = totalTools > 0 ? (completedCount / totalTools) * 100 : 0;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -183,34 +180,16 @@ export function ProtocolDetail({
 
       <Separator />
 
-      {/* Daily Progress Bar — only for active protocols */}
-      {isLoggedIn && isActive && totalTools > 0 && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium">Today&apos;s Progress</p>
-              <p className="text-sm text-muted-foreground">
-                {completedCount}/{totalTools} tools completed
-              </p>
-            </div>
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-300"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            {streakData && (
-              <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
-                <span>Current streak: {streakData.streak} days</span>
-                <span>Longest: {streakData.longest_streak} days</span>
-                <span>Total days: {streakData.total_days}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Daily Progress Bar */}
+      {isLoggedIn && isActive && tools.length > 0 && (
+        <ProtocolProgress
+          completedCount={completedToolIds.size}
+          totalTools={tools.length}
+          streakData={streakData}
+        />
       )}
 
-      {/* Tools — ranked by effectiveness */}
+      {/* Tools */}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">
           Tools (most effective first)
@@ -220,100 +199,18 @@ export function ProtocolDetail({
             Detailed tools coming soon.
           </p>
         ) : (
-          tools.map((tool, index) => {
-            const isCompleted = completedToolIds.has(tool.id);
-            const isToggling = togglingToolId === tool.id;
-            return (
-              <Card key={tool.id} className={isCompleted ? "border-primary/30 bg-primary/5" : ""}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start gap-3">
-                    {isLoggedIn && isActive ? (
-                      <button
-                        onClick={() => toggleToolCompletion(tool.id)}
-                        disabled={isToggling}
-                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isCompleted
-                            ? "bg-primary border-primary text-primary-foreground"
-                            : "border-muted-foreground/30 hover:border-primary"
-                        } ${isToggling ? "opacity-50" : ""}`}
-                        aria-label={isCompleted ? `Mark ${tool.title} incomplete` : `Mark ${tool.title} complete`}
-                      >
-                        {isCompleted ? (
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <span className="text-xs font-bold text-muted-foreground">{index + 1}</span>
-                        )}
-                      </button>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                        {index + 1}
-                      </div>
-                    )}
-                    <div>
-                      <CardTitle className={`text-base ${isCompleted ? "line-through text-muted-foreground" : ""}`}>
-                        {tool.title}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {tool.description}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pl-14">
-                  <div className="space-y-2 text-sm">
-                    <p className="whitespace-pre-wrap">{tool.instructions}</p>
-                    <div className="flex gap-2 flex-wrap mt-2">
-                      {tool.timing && (
-                        <Badge variant="secondary">When: {tool.timing}</Badge>
-                      )}
-                      {tool.duration && (
-                        <Badge variant="secondary">
-                          Duration: {tool.duration}
-                        </Badge>
-                      )}
-                      {tool.frequency && (
-                        <Badge variant="secondary">
-                          Frequency: {tool.frequency}
-                        </Badge>
-                      )}
-                    </div>
-                    {tool.notes && (
-                      <div className="text-muted-foreground text-xs mt-2 space-y-1">
-                        {tool.notes.split("\n").map((line, i) => {
-                          const linkMatch = line.match(
-                            /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/
-                          );
-                          if (linkMatch) {
-                            return (
-                              <a
-                                key={i}
-                                href={linkMatch[2]}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block text-primary hover:underline"
-                              >
-                                {linkMatch[1]} ↗
-                              </a>
-                            );
-                          }
-                          if (line.startsWith("**Evidence:**")) {
-                            return (
-                              <p key={i} className="font-semibold text-foreground mt-2">
-                                Evidence & Sources
-                              </p>
-                            );
-                          }
-                          return line.trim() ? <p key={i}>{line}</p> : null;
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+          tools.map((tool, index) => (
+            <ProtocolToolCard
+              key={tool.id}
+              tool={tool}
+              index={index}
+              isLoggedIn={isLoggedIn}
+              isActive={isActive}
+              isCompleted={completedToolIds.has(tool.id)}
+              isToggling={togglingToolId === tool.id}
+              onToggle={toggleToolCompletion}
+            />
+          ))
         )}
       </div>
 
