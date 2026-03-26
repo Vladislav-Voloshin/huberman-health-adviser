@@ -13,7 +13,7 @@ export function getPinecone() {
 
 export function getIndex() {
   const pc = getPinecone();
-  return pc.index(process.env.PINECONE_INDEX || 'huberman-health');
+  return pc.index(process.env.PINECONE_INDEX || 'craftwell');
 }
 
 export interface VectorMetadata {
