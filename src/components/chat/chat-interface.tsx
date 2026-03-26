@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,13 +31,18 @@ export function ChatInterface({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -52,6 +57,15 @@ export function ChatInterface({
     setInput("");
     setLoading(true);
 
+    const assistantId = crypto.randomUUID();
+    setStreamingId(assistantId);
+
+    // Add empty assistant message that we'll stream into
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantId, role: "assistant", content: "" },
+    ]);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -63,31 +77,73 @@ export function ChatInterface({
         }),
       });
 
-      const data = await res.json();
+      if (!res.ok || !res.body) throw new Error("Stream failed");
 
-      if (data.session_id && !activeSession) {
-        setActiveSession(data.session_id);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6);
+          try {
+            const event = JSON.parse(json);
+
+            if (event.type === "meta") {
+              if (event.session_id && !activeSession) {
+                setActiveSession(event.session_id);
+              }
+              if (event.sources) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? { ...m, sources: event.sources }
+                      : m
+                  )
+                );
+              }
+            } else if (event.type === "text") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: m.content + event.text }
+                    : m
+                )
+              );
+              scrollToBottom();
+            } else if (event.type === "error") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: "Sorry, something went wrong. Please try again." }
+                    : m
+                )
+              );
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
       }
-
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: data.response,
-        sources: data.sources,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
-        },
-      ]);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: "Sorry, something went wrong. Please try again." }
+            : m
+        )
+      );
     } finally {
       setLoading(false);
+      setStreamingId(null);
     }
   }
 
@@ -142,7 +198,12 @@ export function ChatInterface({
                       : "bg-muted"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {msg.content}
+                    {streamingId === msg.id && (
+                      <span className="inline-block w-1.5 h-4 bg-foreground/60 animate-pulse ml-0.5 align-text-bottom" />
+                    )}
+                  </p>
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-border/20">
                       <p className="text-xs text-muted-foreground">Sources:</p>
@@ -156,15 +217,6 @@ export function ChatInterface({
                 </Card>
               </div>
             ))}
-            {loading && (
-              <div className="flex justify-start">
-                <Card className="bg-muted px-4 py-3">
-                  <p className="text-sm text-muted-foreground animate-pulse">
-                    Thinking...
-                  </p>
-                </Card>
-              </div>
-            )}
           </div>
         )}
       </ScrollArea>

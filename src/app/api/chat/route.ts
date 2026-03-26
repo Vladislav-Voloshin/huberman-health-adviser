@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { queryVectors } from "@/lib/pinecone/client";
 import { getEmbedding, getAnthropicClient } from "@/lib/pinecone/embeddings";
@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const { message, session_id, protocol_id } = await request.json();
@@ -75,7 +78,6 @@ Key guidelines:
     systemPrompt += `\n\nRelevant context from the knowledge base:\n${contextText}`;
   }
 
-  // Get protocol context if starting from a protocol
   if (protocol_id) {
     const { data: protocol } = await supabase
       .from("protocols")
@@ -88,29 +90,71 @@ Key guidelines:
     }
   }
 
-  // Call Claude
+  // Stream response using SSE
   const anthropic = getAnthropicClient();
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: [{ role: "user", content: message }],
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      // Send session_id and sources first
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`
+        )
+      );
+
+      let fullContent = "";
+
+      try {
+        const response = anthropic.messages.stream({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: "user", content: message }],
+        });
+
+        for await (const event of response) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            const text = event.delta.text;
+            fullContent += text;
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ type: "text", text })}\n\n`
+              )
+            );
+          }
+        }
+      } catch (err) {
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({ type: "error", error: "Failed to generate response" })}\n\n`
+          )
+        );
+      }
+
+      // Save assistant message
+      await supabase.from("chat_messages").insert({
+        session_id: currentSessionId,
+        role: "assistant",
+        content: fullContent,
+        sources,
+      });
+
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
+      );
+      controller.close();
+    },
   });
 
-  const assistantContent =
-    response.content[0].type === "text" ? response.content[0].text : "";
-
-  // Save assistant message
-  await supabase.from("chat_messages").insert({
-    session_id: currentSessionId,
-    role: "assistant",
-    content: assistantContent,
-    sources,
-  });
-
-  return NextResponse.json({
-    response: assistantContent,
-    sources,
-    session_id: currentSessionId,
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
   });
 }
