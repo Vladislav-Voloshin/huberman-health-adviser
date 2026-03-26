@@ -141,9 +141,34 @@ export function ProtocolDetail({
                     )}
                   </div>
                   {tool.notes && (
-                    <p className="text-muted-foreground text-xs mt-2">
-                      {tool.notes}
-                    </p>
+                    <div className="text-muted-foreground text-xs mt-2 space-y-1">
+                      {tool.notes.split("\n").map((line, i) => {
+                        const linkMatch = line.match(
+                          /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/
+                        );
+                        if (linkMatch) {
+                          return (
+                            <a
+                              key={i}
+                              href={linkMatch[2]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-primary hover:underline"
+                            >
+                              {linkMatch[1]} ↗
+                            </a>
+                          );
+                        }
+                        if (line.startsWith("**Evidence:**")) {
+                          return (
+                            <p key={i} className="font-semibold text-foreground mt-2">
+                              Evidence & Sources
+                            </p>
+                          );
+                        }
+                        return line.trim() ? <p key={i}>{line}</p> : null;
+                      })}
+                    </div>
                   )}
                 </div>
               </CardContent>

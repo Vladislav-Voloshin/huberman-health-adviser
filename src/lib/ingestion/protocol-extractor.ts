@@ -39,6 +39,7 @@ interface ExtractedProtocol {
     duration?: string;
     frequency?: string;
     notes?: string;
+    sources?: { label: string; url: string }[];
   }[];
 }
 
@@ -82,7 +83,11 @@ Guidelines:
 - Use simple language
 - Include safety notes for supplements
 - Categories must be one of: ${VALID_CATEGORIES.join(", ")}
-- Slugs must be lowercase-kebab-case`,
+- Slugs must be lowercase-kebab-case
+- For each tool, include real evidence sources (PubMed articles, Examine.com pages, journal papers) with working URLs
+- PubMed URLs should use format: https://pubmed.ncbi.nlm.nih.gov/{PMID}/
+- Examine.com URLs should use format: https://examine.com/supplements/{supplement-name}/
+- Only include URLs you are confident are real and accessible`,
     messages: [
       {
         role: "user",
@@ -108,6 +113,9 @@ Return a JSON array of protocols. Each protocol should have:
   - duration: how long (optional)
   - frequency: how often (optional)
   - notes: safety info or tips (optional)
+  - sources: array of evidence links, each with:
+    - label: short description (e.g., "PubMed: Melatonin and sleep quality meta-analysis")
+    - url: full URL to PubMed, Examine.com, or journal article
 
 Return ONLY valid JSON array, no other text.`,
       },
@@ -174,6 +182,17 @@ export async function storeProtocols(protocols: ExtractedProtocol[]) {
 
     // Insert tools
     for (const tool of protocol.tools) {
+      // Append evidence sources to notes field
+      let notes = tool.notes || "";
+      if (tool.sources && tool.sources.length > 0) {
+        const sourcesBlock = tool.sources
+          .map((s) => `[${s.label}](${s.url})`)
+          .join("\n");
+        notes = notes
+          ? `${notes}\n\n**Evidence:**\n${sourcesBlock}`
+          : `**Evidence:**\n${sourcesBlock}`;
+      }
+
       const { error: toolError } = await supabase
         .from("protocol_tools")
         .insert({
@@ -185,7 +204,7 @@ export async function storeProtocols(protocols: ExtractedProtocol[]) {
           timing: tool.timing,
           duration: tool.duration,
           frequency: tool.frequency,
-          notes: tool.notes,
+          notes,
         });
 
       if (toolError) {
