@@ -71,30 +71,50 @@ export default function OnboardingPage() {
 
   async function handleComplete() {
     setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    await supabase.from("survey_responses").upsert({
-      user_id: user.id,
-      health_goals: selectedGoals,
-      sleep_quality: sleepQuality,
-      exercise_frequency: exerciseFrequency,
-      stress_level: stressLevel,
-      supplement_experience: supplementExperience,
-      focus_areas: selectedFocusAreas,
-    }, { onConflict: "user_id" });
+      const { error: surveyError } = await supabase.from("survey_responses").upsert({
+        user_id: user.id,
+        health_goals: selectedGoals,
+        sleep_quality: sleepQuality,
+        exercise_frequency: exerciseFrequency,
+        stress_level: stressLevel,
+        supplement_experience: supplementExperience,
+        focus_areas: selectedFocusAreas,
+      }, { onConflict: "user_id" });
 
-    await supabase
-      .from("users")
-      .upsert({
-        id: user.id,
-        email: user.email || null,
-        onboarding_completed: true,
-      }, { onConflict: "id" });
+      if (surveyError) {
+        console.error("Survey save error:", surveyError);
+        setLoading(false);
+        return;
+      }
 
-    router.push("/protocols");
+      const { error: userError } = await supabase
+        .from("users")
+        .upsert({
+          id: user.id,
+          email: user.email || null,
+          onboarding_completed: true,
+        }, { onConflict: "id" });
+
+      if (userError) {
+        console.error("User update error:", userError);
+        setLoading(false);
+        return;
+      }
+
+      router.push("/protocols");
+    } catch (err) {
+      console.error("Onboarding error:", err);
+      setLoading(false);
+    }
   }
 
   const steps = [
