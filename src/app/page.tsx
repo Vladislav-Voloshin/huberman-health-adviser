@@ -53,7 +53,7 @@ export default function HomePage() {
             ].map((cat) => (
               <div
                 key={cat.label}
-                className="flex flex-col items-center gap-1 p-3 rounded-lg border border-border/40 hover:border-border transition-colors"
+                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/30"
               >
                 <span className="text-2xl">{cat.icon}</span>
                 <span className="text-muted-foreground">{cat.label}</span>
