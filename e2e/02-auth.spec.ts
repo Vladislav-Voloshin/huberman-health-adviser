@@ -84,13 +84,14 @@ test.describe("Auth Page", () => {
 
   test("shows error for invalid email sign-in", async ({ page }) => {
     await page.getByRole("tab", { name: "Sign In" }).click();
-    await page.getByPlaceholder("Email").fill("nonexistent@test.com");
-    await page.getByPlaceholder("Password").fill("wrongpassword");
+    // Sign In tab is default so its inputs are visible
+    await page.getByPlaceholder("Email").first().fill("nonexistent@test.com");
+    await page.getByPlaceholder("Password").first().fill("wrongpassword");
     await page.getByRole("button", { name: "Sign In" }).click();
 
-    // Should show an error message
+    // Should show an error message (Supabase API call may take time)
     await expect(page.getByText(/invalid|error|credentials/i)).toBeVisible({
-      timeout: 10000,
+      timeout: 15000,
     });
   });
 

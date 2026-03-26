@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,11 +39,36 @@ export function ProfileView({
 }: ProfileViewProps) {
   const router = useRouter();
   const supabase = createClient();
+  const [streaks, setStreaks] = useState<{ protocol_title: string; streak: number; longest_streak: number; total_days: number }[]>([]);
+
+  const fetchStreaks = useCallback(async () => {
+    if (activeProtocols.length === 0) return;
+    const results = await Promise.all(
+      activeProtocols.map(async (up) => {
+        try {
+          const res = await fetch(`/api/protocols/completions?protocol_id=${up.protocols.id}&type=streaks`);
+          if (res.ok) {
+            const data = await res.json();
+            return { protocol_title: up.protocols.title, ...data };
+          }
+        } catch { /* ignore */ }
+        return { protocol_title: up.protocols.title, streak: 0, longest_streak: 0, total_days: 0 };
+      })
+    );
+    setStreaks(results);
+  }, [activeProtocols]);
+
+  useEffect(() => {
+    fetchStreaks();
+  }, [fetchStreaks]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push("/");
   }
+
+  const totalCompletionDays = streaks.reduce((sum, s) => sum + s.total_days, 0);
+  const bestStreak = Math.max(0, ...streaks.map((s) => s.longest_streak));
 
   return (
     <div className="space-y-4">
@@ -171,6 +197,51 @@ export function ProfileView({
           )}
         </CardContent>
       </Card>
+
+      {/* Streaks & Completion Stats */}
+      {activeProtocols.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Streaks & Stats</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Summary stats */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-2xl font-bold">{activeProtocols.length}</p>
+                <p className="text-xs text-muted-foreground">Active Protocols</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-2xl font-bold">{totalCompletionDays}</p>
+                <p className="text-xs text-muted-foreground">Total Days</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-2xl font-bold">{bestStreak}</p>
+                <p className="text-xs text-muted-foreground">Best Streak</p>
+              </div>
+            </div>
+            {/* Per-protocol streaks */}
+            {streaks.length > 0 && (
+              <div className="space-y-2">
+                <Separator />
+                {streaks.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="truncate flex-1 min-w-0 pr-2">{s.protocol_title}</span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {s.streak > 0 && (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs">
+                          {s.streak}d streak
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">{s.total_days}d total</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         Sign Out

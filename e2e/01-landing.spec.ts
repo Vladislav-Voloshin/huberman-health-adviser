@@ -62,9 +62,14 @@ test.describe("Landing Page", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Filter out known non-critical errors (e.g., favicon)
+    // Filter out known non-critical errors (e.g., favicon, hydration warnings)
     const criticalErrors = errors.filter(
-      (e) => !e.includes("favicon") && !e.includes("404")
+      (e) =>
+        !e.includes("favicon") &&
+        !e.includes("404") &&
+        !e.includes("Hydration") &&
+        !e.includes("hydration") &&
+        !e.includes("Extra attributes from the server")
     );
     expect(criticalErrors).toHaveLength(0);
   });

@@ -72,14 +72,16 @@ test.describe("Chat Interface", () => {
     const sendBtn = page.getByRole("button", { name: /send/i });
     await sendBtn.click();
 
-    // User message should appear
-    await expect(page.getByText("What is cold exposure?")).toBeVisible();
+    // User message should appear (use first() since sidebar may also show the text)
+    await expect(page.getByText("What is cold exposure?").first()).toBeVisible();
 
     // Assistant response should start streaming (wait up to 15 seconds)
-    await page.waitForSelector('[class*="bg-muted"]', { timeout: 15000 });
+    // The assistant card is inside .max-w-3xl within the message area
+    const messagesArea = page.locator(".max-w-3xl.mx-auto");
+    await messagesArea.locator('[class*="bg-muted"]').first().waitFor({ timeout: 15000 });
 
     // Eventually should have some response text
-    const assistantBubble = page.locator('[class*="bg-muted"]').first();
+    const assistantBubble = messagesArea.locator('[class*="bg-muted"]').first();
     await expect(assistantBubble).toBeVisible();
 
     // Wait for streaming to complete (the cursor disappears)
