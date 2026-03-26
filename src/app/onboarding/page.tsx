@@ -76,7 +76,7 @@ export default function OnboardingPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from("survey_responses").insert({
+    await supabase.from("survey_responses").upsert({
       user_id: user.id,
       health_goals: selectedGoals,
       sleep_quality: sleepQuality,
@@ -84,12 +84,15 @@ export default function OnboardingPage() {
       stress_level: stressLevel,
       supplement_experience: supplementExperience,
       focus_areas: selectedFocusAreas,
-    });
+    }, { onConflict: "user_id" });
 
     await supabase
       .from("users")
-      .update({ onboarding_completed: true })
-      .eq("id", user.id);
+      .upsert({
+        id: user.id,
+        email: user.email || null,
+        onboarding_completed: true,
+      }, { onConflict: "id" });
 
     router.push("/protocols");
   }

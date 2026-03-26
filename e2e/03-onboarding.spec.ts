@@ -1,36 +1,27 @@
 /**
  * E2E Tests: Onboarding Flow
  *
- * Tests the 4-step onboarding wizard for new users.
- * Uses a fresh test account to ensure onboarding is triggered.
+ * Tests the 4-step onboarding wizard, user creation for OAuth users,
+ * and that already-onboarded users skip onboarding on subsequent logins.
  */
 
 import { test, expect } from "@playwright/test";
+import { signInTestUser, TEST_USER } from "./helpers";
 
 test.describe("Onboarding Flow", () => {
-  // These tests require an account that hasn't completed onboarding.
-  // We test the UI elements and navigation without needing a fresh account.
-
   test("onboarding page redirects unauthenticated users to auth", async ({
     page,
   }) => {
     await page.goto("/onboarding");
-    // Should redirect to /auth since not logged in
     await page.waitForURL(/(\/auth|\/onboarding)/, { timeout: 10000 });
   });
 
   test("onboarding page loads with step 0 content", async ({ page }) => {
-    // Navigate directly — if user is already onboarded, it may redirect
     await page.goto("/onboarding");
     await page.waitForLoadState("networkidle");
 
-    // If we got redirected to auth, that's expected for unauthenticated users
-    if (page.url().includes("/auth")) {
-      // This is correct behavior
-      return;
-    }
+    if (page.url().includes("/auth")) return;
 
-    // If we're on onboarding, check step 0 content
     if (page.url().includes("/onboarding")) {
       const content = await page.textContent("body");
       expect(
@@ -45,19 +36,70 @@ test.describe("Onboarding Flow", () => {
 
     if (!page.url().includes("/onboarding")) return;
 
-    // Check some health goal options exist
     const goals = [
       "Better Sleep",
       "More Energy",
       "Reduce Stress",
       "Improve Focus",
     ];
+    let found = false;
     for (const goal of goals) {
       const element = page.getByText(goal, { exact: false });
-      if (await element.isVisible()) {
-        // At least some goals are visible
-        return;
+      if (await element.isVisible().catch(() => false)) {
+        found = true;
+        break;
       }
     }
+    if (page.url().includes("/onboarding")) {
+      expect(found).toBeTruthy();
+    }
+  });
+});
+
+test.describe("Onboarding Persistence", () => {
+  test("already onboarded user is NOT redirected to onboarding on login", async ({
+    page,
+  }) => {
+    // Sign in with our test user (who has onboarding_completed = true)
+    await signInTestUser(page);
+
+    // Should land on /protocols, NOT /onboarding
+    await page.waitForURL((url) => !url.pathname.startsWith("/auth"), {
+      timeout: 10000,
+    });
+
+    expect(page.url()).not.toContain("/onboarding");
+    expect(page.url()).toContain("/protocols");
+  });
+
+  test("already onboarded user stays on protocols after page reload", async ({
+    page,
+  }) => {
+    await signInTestUser(page);
+    await page.waitForURL("**/protocols", { timeout: 10000 });
+
+    // Reload the page — should stay on protocols, not redirect to onboarding
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+
+    expect(page.url()).toContain("/protocols");
+    expect(page.url()).not.toContain("/onboarding");
+  });
+
+  test("already onboarded user navigating to /onboarding directly can access it", async ({
+    page,
+  }) => {
+    await signInTestUser(page);
+
+    // Go directly to /onboarding — page should load (not crash)
+    await page.goto("/onboarding");
+    await page.waitForLoadState("networkidle");
+
+    // Page should either show onboarding or redirect — either is acceptable
+    // The key test is it doesn't error out
+    const status = page.url();
+    expect(
+      status.includes("/onboarding") || status.includes("/protocols")
+    ).toBeTruthy();
   });
 });

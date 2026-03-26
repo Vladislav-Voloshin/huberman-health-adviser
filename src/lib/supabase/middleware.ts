@@ -54,7 +54,22 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile && !profile.onboarding_completed) {
+    if (!profile) {
+      // User row doesn't exist yet (e.g., first OAuth login) — create it
+      await supabase.from('users').upsert({
+        id: user.id,
+        email: user.email || null,
+        phone: user.phone || null,
+        display_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+        onboarding_completed: false,
+      }, { onConflict: 'id' });
+
+      const url = request.nextUrl.clone();
+      url.pathname = '/onboarding';
+      return NextResponse.redirect(url);
+    }
+
+    if (!profile.onboarding_completed) {
       const url = request.nextUrl.clone();
       url.pathname = '/onboarding';
       return NextResponse.redirect(url);
