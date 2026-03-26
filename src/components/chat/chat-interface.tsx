@@ -197,11 +197,12 @@ export function ChatInterface({
               );
             }
           } catch {
-            // Skip malformed JSON
+            // Skip malformed SSE JSON chunks (expected during streaming)
           }
         }
       }
-    } catch {
+    } catch (err) {
+      console.error("[Chat] Stream error:", err);
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId

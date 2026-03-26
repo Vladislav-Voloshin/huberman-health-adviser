@@ -1,51 +1,133 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth, handleApiError } from "@/lib/api/helpers";
 import { queryVectors } from "@/lib/pinecone/client";
 import { getEmbedding, getAnthropicClient } from "@/lib/pinecone/embeddings";
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const { user, supabase } = await requireAuth();
 
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
+    const { message, session_id, protocol_id } = await request.json();
+
+    // Create or get session
+    let currentSessionId = session_id;
+    if (!currentSessionId) {
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .insert({
+          user_id: user.id,
+          title: message.slice(0, 50),
+          protocol_id: protocol_id || null,
+        })
+        .select("id")
+        .single();
+      currentSessionId = session?.id;
+    }
+
+    // Save user message
+    await supabase.from("chat_messages").insert({
+      session_id: currentSessionId,
+      role: "user",
+      content: message,
     });
+
+    // Get relevant context via RAG
+    const { contextText, sources } = await fetchRAGContext(message);
+
+    // Build system prompt
+    let systemPrompt = buildSystemPrompt(contextText);
+
+    if (protocol_id) {
+      const { data: protocol } = await supabase
+        .from("protocols")
+        .select("title, description")
+        .eq("id", protocol_id)
+        .single();
+
+      if (protocol) {
+        systemPrompt += `\n\nThe user is asking about the "${protocol.title}" protocol: ${protocol.description}`;
+      }
+    }
+
+    // Stream response using SSE
+    const anthropic = getAnthropicClient();
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`
+          )
+        );
+
+        let fullContent = "";
+
+        try {
+          const response = anthropic.messages.stream({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: [{ role: "user", content: message }],
+          });
+
+          for await (const event of response) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              const text = event.delta.text;
+              fullContent += text;
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: "text", text })}\n\n`
+                )
+              );
+            }
+          }
+        } catch (err) {
+          console.error("[Chat] Stream error:", err instanceof Error ? err.message : err);
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "error", error: "Failed to generate response" })}\n\n`
+            )
+          );
+        }
+
+        // Save assistant message
+        await supabase.from("chat_messages").insert({
+          session_id: currentSessionId,
+          role: "assistant",
+          content: fullContent,
+          sources,
+        });
+
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
+        );
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (err) {
+    return handleApiError(err);
   }
+}
 
-  const { message, session_id, protocol_id } = await request.json();
-
-  // Create or get session
-  let currentSessionId = session_id;
-  if (!currentSessionId) {
-    const { data: session } = await supabase
-      .from("chat_sessions")
-      .insert({
-        user_id: user.id,
-        title: message.slice(0, 50),
-        protocol_id: protocol_id || null,
-      })
-      .select("id")
-      .single();
-    currentSessionId = session?.id;
-  }
-
-  // Save user message
-  await supabase.from("chat_messages").insert({
-    session_id: currentSessionId,
-    role: "user",
-    content: message,
-  });
-
-  // Get relevant context via RAG
+/** Fetch RAG context from Pinecone for the given query. */
+async function fetchRAGContext(query: string) {
   let contextText = "";
   let sources: { type: string; title: string; chunk_id: string }[] = [];
 
   try {
-    const embedding = await getEmbedding(message);
+    const embedding = await getEmbedding(query);
     const matches = await queryVectors(embedding, 5);
 
     sources = matches.map((m) => ({
@@ -58,12 +140,16 @@ export async function POST(request: NextRequest) {
       .map((m) => m.metadata?.content || "")
       .filter(Boolean)
       .join("\n\n---\n\n");
-  } catch {
-    // RAG not available yet, proceed without context
+  } catch (err) {
+    console.warn("[Chat] RAG unavailable:", err instanceof Error ? err.message : err);
   }
 
-  // Build system prompt
-  let systemPrompt = `You are Craftwell, a science-based health adviser.
+  return { contextText, sources };
+}
+
+/** Build the system prompt with optional RAG context. */
+function buildSystemPrompt(contextText: string): string {
+  let prompt = `You are Craftwell, a science-based health adviser.
 You provide evidence-based, practical health advice drawn from neuroscience and peer-reviewed research.
 
 Key guidelines:
@@ -75,86 +161,8 @@ Key guidelines:
 - Be concise but thorough`;
 
   if (contextText) {
-    systemPrompt += `\n\nRelevant context from the knowledge base:\n${contextText}`;
+    prompt += `\n\nRelevant context from the knowledge base:\n${contextText}`;
   }
 
-  if (protocol_id) {
-    const { data: protocol } = await supabase
-      .from("protocols")
-      .select("title, description")
-      .eq("id", protocol_id)
-      .single();
-
-    if (protocol) {
-      systemPrompt += `\n\nThe user is asking about the "${protocol.title}" protocol: ${protocol.description}`;
-    }
-  }
-
-  // Stream response using SSE
-  const anthropic = getAnthropicClient();
-
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      // Send session_id and sources first
-      controller.enqueue(
-        encoder.encode(
-          `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`
-        )
-      );
-
-      let fullContent = "";
-
-      try {
-        const response = anthropic.messages.stream({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: [{ role: "user", content: message }],
-        });
-
-        for await (const event of response) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            const text = event.delta.text;
-            fullContent += text;
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ type: "text", text })}\n\n`
-              )
-            );
-          }
-        }
-      } catch (err) {
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ type: "error", error: "Failed to generate response" })}\n\n`
-          )
-        );
-      }
-
-      // Save assistant message
-      await supabase.from("chat_messages").insert({
-        session_id: currentSessionId,
-        role: "assistant",
-        content: fullContent,
-        sources,
-      });
-
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
-      );
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+  return prompt;
 }

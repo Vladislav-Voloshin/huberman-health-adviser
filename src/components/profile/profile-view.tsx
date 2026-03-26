@@ -51,7 +51,9 @@ export function ProfileView({
             const data = await res.json();
             return { protocol_title: up.protocols.title, ...data };
           }
-        } catch { /* ignore */ }
+        } catch (err) {
+          console.warn("[Profile] Failed to fetch streaks:", err);
+        }
         return { protocol_title: up.protocols.title, streak: 0, longest_streak: 0, total_days: 0 };
       })
     );

@@ -1,48 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth, handleApiError } from "@/lib/api/helpers";
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const { user, supabase } = await requireAuth();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get("session_id");
 
-  const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get("session_id");
+    if (sessionId) {
+      // Verify the session belongs to the user
+      const { data: session } = await supabase
+        .from("chat_sessions")
+        .select("id, user_id")
+        .eq("id", sessionId)
+        .single();
 
-  if (sessionId) {
-    // Load messages for a specific session
-    const { data: messages } = await supabase
-      .from("chat_messages")
-      .select("id, role, content, sources, created_at")
-      .eq("session_id", sessionId)
-      .order("created_at", { ascending: true });
+      if (!session || session.user_id !== user.id) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
 
-    // Verify the session belongs to the user
-    const { data: session } = await supabase
-      .from("chat_sessions")
-      .select("id, user_id")
-      .eq("id", sessionId)
-      .single();
+      // Load messages for a specific session
+      const { data: messages } = await supabase
+        .from("chat_messages")
+        .select("id, role, content, sources, created_at")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
 
-    if (!session || session.user_id !== user.id) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ messages: messages || [] });
     }
 
-    return NextResponse.json({ messages: messages || [] });
+    // List all sessions
+    const { data: sessions } = await supabase
+      .from("chat_sessions")
+      .select("id, title, protocol_id, created_at, updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(50);
+
+    return NextResponse.json({ sessions: sessions || [] });
+  } catch (err) {
+    return handleApiError(err);
   }
-
-  // List all sessions
-  const { data: sessions } = await supabase
-    .from("chat_sessions")
-    .select("id, title, protocol_id, created_at, updated_at")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false })
-    .limit(50);
-
-  return NextResponse.json({ sessions: sessions || [] });
 }

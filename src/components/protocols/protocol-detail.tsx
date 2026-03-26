@@ -61,7 +61,9 @@ export function ProtocolDetail({
         const data = await res.json();
         setCompletedToolIds(new Set(data.completed_tool_ids));
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn("[Completions] Failed to fetch:", err);
+    }
   }, [isLoggedIn, isActive, protocol.id]);
 
   const fetchStreaks = useCallback(async () => {
@@ -72,7 +74,9 @@ export function ProtocolDetail({
         const data = await res.json();
         setStreakData(data);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn("[Streaks] Failed to fetch:", err);
+    }
   }, [isLoggedIn, isActive, protocol.id]);
 
   useEffect(() => {

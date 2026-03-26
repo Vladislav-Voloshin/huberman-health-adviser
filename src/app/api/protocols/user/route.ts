@@ -1,78 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const { user, supabase } = await requireAuth();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { data: userProtocols } = await supabase
+      .from("user_protocols")
+      .select("*, protocols(id, title, slug, category, description, difficulty, time_commitment)")
+      .eq("user_id", user.id);
+
+    return NextResponse.json({ protocols: userProtocols || [] });
+  } catch (err) {
+    return handleApiError(err);
   }
-
-  const { data: userProtocols } = await supabase
-    .from("user_protocols")
-    .select("*, protocols(id, title, slug, category, description, difficulty, time_commitment)")
-    .eq("user_id", user.id);
-
-  return NextResponse.json({ protocols: userProtocols || [] });
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const { user, supabase } = await requireAuth();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const { protocol_id, action } = await request.json();
 
-  const { protocol_id, action } = await request.json();
-
-  if (!protocol_id || !action) {
-    return NextResponse.json(
-      { error: "protocol_id and action required" },
-      { status: 400 }
-    );
-  }
-
-  switch (action) {
-    case "activate": {
-      const { error } = await supabase.from("user_protocols").upsert(
-        {
-          user_id: user.id,
-          protocol_id,
-          is_active: true,
-        },
-        { onConflict: "user_id,protocol_id" }
-      );
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ status: "activated" });
+    if (!protocol_id || !action) {
+      return apiError("protocol_id and action required", 400);
     }
 
-    case "deactivate": {
-      const { error } = await supabase
-        .from("user_protocols")
-        .update({ is_active: false })
-        .eq("user_id", user.id)
-        .eq("protocol_id", protocol_id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ status: "deactivated" });
-    }
+    switch (action) {
+      case "activate": {
+        const { error } = await supabase.from("user_protocols").upsert(
+          {
+            user_id: user.id,
+            protocol_id,
+            is_active: true,
+          },
+          { onConflict: "user_id,protocol_id" }
+        );
+        if (error) return apiError(error.message, 500);
+        return NextResponse.json({ status: "activated" });
+      }
 
-    case "remove": {
-      const { error } = await supabase
-        .from("user_protocols")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("protocol_id", protocol_id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ status: "removed" });
-    }
+      case "deactivate": {
+        const { error } = await supabase
+          .from("user_protocols")
+          .update({ is_active: false })
+          .eq("user_id", user.id)
+          .eq("protocol_id", protocol_id);
+        if (error) return apiError(error.message, 500);
+        return NextResponse.json({ status: "deactivated" });
+      }
 
-    default:
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+      case "remove": {
+        const { error } = await supabase
+          .from("user_protocols")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("protocol_id", protocol_id);
+        if (error) return apiError(error.message, 500);
+        return NextResponse.json({ status: "removed" });
+      }
+
+      default:
+        return apiError("Invalid action", 400);
+    }
+  } catch (err) {
+    return handleApiError(err);
   }
 }

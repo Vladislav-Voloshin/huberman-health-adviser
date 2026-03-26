@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-function getVoyageApiKey() {
-  return process.env.VOYAGE_API_KEY || process.env.ANTHROPIC_API_KEY!;
+function getVoyageApiKey(): string {
+  const key = process.env.VOYAGE_API_KEY;
+  if (!key) {
+    throw new Error("VOYAGE_API_KEY environment variable is required for embeddings");
+  }
+  return key;
 }
 
 export function getAnthropicClient() {
