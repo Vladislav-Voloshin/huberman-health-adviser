@@ -89,6 +89,28 @@ export function ProtocolToolCard({
           {tool.notes && (
             <div className="text-muted-foreground text-xs mt-2 space-y-1">
               {tool.notes.split("\n").map((line, i) => {
+                // Citation reference with link
+                const refMatch = line.match(
+                  /\*\*Reference:\*\*\s*\[([^\]]+)\]\((https?:\/\/[^)]+)\)/
+                );
+                if (refMatch) {
+                  return (
+                    <div key={i} className="mt-2 p-2 rounded-md bg-muted/50 border border-border/30">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-1">
+                        Reference
+                      </p>
+                      <a
+                        href={refMatch[2]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline text-xs leading-snug"
+                      >
+                        {refMatch[1]} ↗
+                      </a>
+                    </div>
+                  );
+                }
+                // Generic markdown link
                 const linkMatch = line.match(
                   /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/
                 );
