@@ -11,7 +11,7 @@ test.describe("Profile Stats & Streaks", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("profile shows user email", async ({ page }) => {

@@ -2,57 +2,60 @@
  * E2E Tests: API Routes
  *
  * Tests API endpoints for proper auth, response format, and error handling.
- * Note: The proxy middleware may redirect unauthenticated requests to /auth,
- * so we test both the redirect behavior and the API contract.
+ * Unauthenticated API requests should return 401 JSON (not redirect).
  */
 
 import { test, expect } from "@playwright/test";
 
 test.describe("API: Chat Endpoint", () => {
-  test("POST /api/chat without auth returns 401 or redirects", async ({
-    request,
-  }) => {
+  test("POST /api/chat without auth returns 401", async ({ request }) => {
     const res = await request.post("/api/chat", {
       headers: { "Content-Type": "application/json" },
       data: { message: "test" },
     });
-    // Either 401 (API handles auth) or 200/302 (proxy redirected to /auth page)
-    expect([200, 302, 401]).toContain(res.status());
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 });
 
 test.describe("API: User Protocols Endpoint", () => {
-  test("GET /api/protocols/user without auth returns 401 or redirects", async ({
+  test("GET /api/protocols/user without auth returns 401", async ({
     request,
   }) => {
     const res = await request.get("/api/protocols/user");
-    expect([200, 302, 401]).toContain(res.status());
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 
-  test("POST /api/protocols/user without auth returns 401 or redirects", async ({
+  test("POST /api/protocols/user without auth returns 401", async ({
     request,
   }) => {
     const res = await request.post("/api/protocols/user", {
       headers: { "Content-Type": "application/json" },
       data: { protocol_id: "test", action: "activate" },
     });
-    expect([200, 302, 401]).toContain(res.status());
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 });
 
 test.describe("API: Ingest Endpoint", () => {
-  test("POST /api/ingest without admin key is rejected or redirected", async ({
+  test("POST /api/ingest without admin key returns 401", async ({
     request,
   }) => {
     const res = await request.post("/api/ingest", {
       headers: { "Content-Type": "application/json" },
       data: { step: "extract-protocols" },
     });
-    // Proxy may redirect, or API returns 401
-    expect([200, 302, 401]).toContain(res.status());
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 
-  test("POST /api/ingest with correct admin key returns success", async ({
+  test("POST /api/ingest with correct admin key and unknown step returns 400", async ({
     request,
   }) => {
     const res = await request.post("/api/ingest", {
@@ -62,15 +65,9 @@ test.describe("API: Ingest Endpoint", () => {
       },
       data: { step: "nonexistent-step" },
     });
-
-    // Either proxy redirects, or we get 400 for unknown step
-    const status = res.status();
-    if (status === 400) {
-      const body = await res.json();
-      expect(body.error).toContain("Unknown step");
-    }
-    // If proxy redirected (200), that's also acceptable
-    expect([200, 400]).toContain(status);
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain("Unknown step");
   });
 });
 

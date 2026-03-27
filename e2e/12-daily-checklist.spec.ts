@@ -13,7 +13,7 @@ test.describe("Daily Checklist", () => {
     await signInTestUser(page);
     // Navigate to first protocol detail via direct URL navigation
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Get the href of the first protocol and navigate directly
     const firstCard = page.locator("a[href^='/protocols/']").first();
@@ -21,7 +21,7 @@ test.describe("Daily Checklist", () => {
     await page.goto(href!);
     // Wait for protocol title heading to render (server-side fetch complete)
     await page.waitForSelector("h1", { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Ensure protocol is activated — checklist only shows for active protocols
     const addBtn = page.getByRole("button", { name: /add to my protocols/i });
@@ -55,18 +55,19 @@ test.describe("Daily Checklist", () => {
     await toggleButtons.first().waitFor({ timeout: 10000 });
 
     await toggleButtons.first().click();
-    await page.waitForTimeout(1000);
 
     // After clicking, should now show "incomplete" option for that tool
     const incompleteButtons = page.getByRole("button", {
       name: /mark .+ incomplete/i,
     });
+    await incompleteButtons.first().waitFor({ timeout: 5000 });
     const count = await incompleteButtons.count();
     expect(count).toBeGreaterThan(0);
 
     // Uncheck it to clean up
     await incompleteButtons.first().click();
-    await page.waitForTimeout(500);
+    // Wait for the "mark complete" button to reappear
+    await toggleButtons.first().waitFor({ timeout: 5000 });
   });
 
   test("progress bar reflects completion count", async ({ page }) => {

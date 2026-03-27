@@ -35,7 +35,7 @@ test.describe("P0 Happy Path: Browse → Detail → Add to Stack", () => {
   }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Browse: see protocol cards
     const cards = page.locator("a[href^='/protocols/']");
@@ -70,7 +70,7 @@ test.describe("P0 Happy Path: Protocol → Chat about it", () => {
   test("user can navigate from protocol detail to chat", async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Open a protocol
     await page.locator("a[href^='/protocols/']").first().click();
@@ -98,7 +98,7 @@ test.describe("P0 Happy Path: Full Navigation Cycle", () => {
 
     // Start on protocols
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/protocols/);
 
     // Go to chat
@@ -133,7 +133,7 @@ test.describe("P0 Happy Path: Sign Out & Re-Sign In", () => {
 
     // Go to profile and sign out
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const signOutBtn = page.getByRole("button", { name: /sign out/i });
     await signOutBtn.click();
@@ -178,12 +178,14 @@ test.describe("P0 Happy Path: Search and Filter Protocols", () => {
   test("user can search and filter to find a protocol", async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Use search
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("sleep");
-    await page.waitForTimeout(500);
+
+    // Wait for debounced search results to appear
+    await expect(page.locator("a[href^='/protocols/']").first()).toBeVisible();
 
     // Should show filtered results
     const cards = page.locator("a[href^='/protocols/']");

@@ -11,7 +11,7 @@ test.describe("Theme Toggle", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("theme toggle button is visible in header", async ({ page }) => {
@@ -28,7 +28,13 @@ test.describe("Theme Toggle", () => {
 
     const toggleBtn = page.getByRole("button", { name: /toggle theme/i });
     await toggleBtn.click();
-    await page.waitForTimeout(500);
+
+    // Wait for theme class to change on the html element
+    if (wasDark) {
+      await expect(html).not.toHaveClass(/dark/);
+    } else {
+      await expect(html).toHaveClass(/dark/);
+    }
 
     const newClass = await html.getAttribute("class");
     const isDark = newClass?.includes("dark");
@@ -42,10 +48,23 @@ test.describe("Theme Toggle", () => {
     const initialClass = await html.getAttribute("class");
 
     const toggleBtn = page.getByRole("button", { name: /toggle theme/i });
+    const wasDark = initialClass?.includes("dark");
+
     await toggleBtn.click();
-    await page.waitForTimeout(300);
+    // Wait for first toggle to take effect
+    if (wasDark) {
+      await expect(html).not.toHaveClass(/dark/);
+    } else {
+      await expect(html).toHaveClass(/dark/);
+    }
+
     await toggleBtn.click();
-    await page.waitForTimeout(300);
+    // Wait for second toggle to restore original theme
+    if (wasDark) {
+      await expect(html).toHaveClass(/dark/);
+    } else {
+      await expect(html).not.toHaveClass(/dark/);
+    }
 
     const finalClass = await html.getAttribute("class");
     expect(finalClass?.includes("dark")).toBe(initialClass?.includes("dark"));

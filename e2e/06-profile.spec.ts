@@ -11,7 +11,7 @@ test.describe("Profile Page", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("displays account section with email", async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe("Profile Navigation", () => {
   test("bottom nav Profile link navigates to profile", async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Click profile in bottom nav (👤 icon or "Profile" text)
     const profileNav = page.getByRole("link", { name: /profile/i });
