@@ -9,7 +9,7 @@ interface UseChatStreamOptions {
   initialProtocolId?: string;
 }
 
-export function useChatStream({ userId, initialSessions, initialProtocolId }: UseChatStreamOptions) {
+export function useChatStream({ userId: _userId, initialSessions, initialProtocolId }: UseChatStreamOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,7 +83,6 @@ export function useChatStream({ userId, initialSessions, initialProtocolId }: Us
         body: JSON.stringify({
           message: userMessage.content,
           session_id: activeSession,
-          user_id: userId,
           protocol_id: !activeSession ? protocolId : undefined,
         }),
       });

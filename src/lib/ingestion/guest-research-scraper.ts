@@ -6,14 +6,7 @@
  * with research from experts who appeared on the podcast.
  */
 
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase, cleanHtml } from "./shared";
 
 interface GuestResearch {
   guest_name: string;
@@ -125,15 +118,6 @@ async function fetchArticles(pmids: string[]): Promise<GuestResearch[]> {
   return articles;
 }
 
-function cleanHtml(text: string): string {
-  return text
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 /**
  * Store guest research as content chunks

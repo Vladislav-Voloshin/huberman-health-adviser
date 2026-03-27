@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { toggleItem } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StepHealthGoals } from "@/components/onboarding/step-health-goals";
@@ -26,9 +27,6 @@ export default function OnboardingPage() {
   const [supplementExperience, setSupplementExperience] = useState("");
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([]);
 
-  function toggleItem(list: string[], item: string, setter: (v: string[]) => void) {
-    setter(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
-  }
 
   async function handleComplete() {
     setLoading(true);
@@ -79,7 +77,7 @@ export default function OnboardingPage() {
     <StepHealthGoals
       key="goals"
       selectedGoals={selectedGoals}
-      onToggle={(goal) => toggleItem(selectedGoals, goal, setSelectedGoals)}
+      onToggle={(goal) => setSelectedGoals(toggleItem(selectedGoals, goal))}
     />,
     <StepSleepStress
       key="sleep"
@@ -98,7 +96,7 @@ export default function OnboardingPage() {
     <StepFocusAreas
       key="focus"
       selectedAreas={selectedFocusAreas}
-      onToggle={(area) => toggleItem(selectedFocusAreas, area, setSelectedFocusAreas)}
+      onToggle={(area) => setSelectedFocusAreas(toggleItem(selectedFocusAreas, area))}
     />,
   ];
 

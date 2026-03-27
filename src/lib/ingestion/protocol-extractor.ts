@@ -6,15 +6,8 @@
  * podcast/newsletter content into actionable, ranked protocol toolkits.
  */
 
-import { createClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase } from "./shared";
 
 function getAnthropic() {
   return new Anthropic({

@@ -5,14 +5,7 @@
  * Stores metadata in Supabase, transcripts are processed separately.
  */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
-function getSupabase(): SupabaseClient {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase, extractTopics } from "./shared";
 
 interface EpisodeData {
   episode_number: number;
@@ -204,50 +197,3 @@ function extractGuests(title: string): string[] {
   return guests;
 }
 
-function extractTopics(title: string, description: string): string[] {
-  const topicKeywords = [
-    "sleep",
-    "focus",
-    "exercise",
-    "stress",
-    "anxiety",
-    "dopamine",
-    "motivation",
-    "cold",
-    "heat",
-    "sauna",
-    "light",
-    "circadian",
-    "nutrition",
-    "fasting",
-    "supplement",
-    "hormone",
-    "testosterone",
-    "estrogen",
-    "cortisol",
-    "caffeine",
-    "alcohol",
-    "meditation",
-    "breathwork",
-    "vision",
-    "pain",
-    "recovery",
-    "muscle",
-    "fat loss",
-    "brain",
-    "memory",
-    "learning",
-    "creativity",
-    "gut",
-    "immune",
-    "aging",
-    "longevity",
-    "mental health",
-    "depression",
-    "adhd",
-    "trauma",
-  ];
-
-  const combined = `${title} ${description}`.toLowerCase();
-  return topicKeywords.filter((keyword) => combined.includes(keyword));
-}

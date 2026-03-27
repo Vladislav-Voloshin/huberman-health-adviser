@@ -5,14 +5,7 @@
  * into optimal pieces for vector embedding and RAG retrieval.
  */
 
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase } from "./shared";
 
 interface ChunkInput {
   source_type: "podcast" | "newsletter" | "book" | "research" | "supplement";

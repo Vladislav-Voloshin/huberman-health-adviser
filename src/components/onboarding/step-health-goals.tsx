@@ -1,9 +1,6 @@
 "use client";
 
-const HEALTH_GOALS = [
-  "Better Sleep", "More Energy", "Reduce Stress", "Build Muscle",
-  "Lose Weight", "Improve Focus", "Better Mood", "Longevity",
-];
+import { HEALTH_GOALS } from "@/lib/survey-constants";
 
 interface StepHealthGoalsProps {
   selectedGoals: string[];
