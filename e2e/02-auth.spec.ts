@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { TEST_USER } from "./helpers";
+import "./helpers";
 
 test.describe("Auth Page", () => {
   test.beforeEach(async ({ page }) => {

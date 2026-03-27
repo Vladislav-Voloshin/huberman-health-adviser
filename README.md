@@ -58,22 +58,24 @@ scripts/migrations/001-add-profile-fields.sql
 scripts/fix-onboarding-rls.sql
 ```
 
-### 4. Seed the knowledge base
-
-Trigger the ingestion pipeline to populate protocols and embeddings:
-
-```bash
-curl -X POST http://localhost:3000/api/ingest \
-  -H "x-api-key: YOUR_ADMIN_API_KEY"
-```
-
-### 5. Start the dev server
+### 4. Start the dev server
 
 ```bash
 npm run dev
 ```
 
 Open http://localhost:3000.
+
+### 5. Seed the knowledge base
+
+Trigger the ingestion pipeline to populate protocols and embeddings:
+
+```bash
+curl -X POST http://localhost:3000/api/ingest \
+  -H "Authorization: Bearer YOUR_ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"step":"full-pipeline"}'
+```
 
 ## Environment Variables
 
@@ -126,6 +128,17 @@ e2e/                  # Playwright E2E test suites
 
 ## Automated PR Review
 
-This repo uses a GitHub Actions workflow (`.github/workflows/codex-pr-review.yml`) that runs an automatic Codex review on pull requests and sends a Telegram notification when a PR is ready for approval.
+This repo includes a GitHub Actions workflow at `.github/workflows/codex-pr-review.yml` that runs an automatic Codex review whenever a pull request is opened, reopened, marked ready for review, or updated. It also sends a Telegram message that the PR is waiting for your approval.
 
-Required secrets: `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
+Setup:
+
+1. Add repository secrets named `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`.
+2. Push the workflow to the default branch.
+3. Open or update a pull request to trigger the review bot and Telegram alert.
+
+Notes:
+
+- The workflow uses the official `openai/codex-action`.
+- Reviews are posted as a single upserted PR comment so updates do not spam the thread.
+- The workflow uses `pull_request_target` so reviews and Telegram alerts can run for forked PRs too.
+- To reduce risk, it checks out the PR merge ref, avoids persistent checkout credentials, and runs Codex in a read-only sandbox.

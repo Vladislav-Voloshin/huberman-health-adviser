@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -73,9 +73,8 @@ export function ProfileView({
     setStreaks(results);
   }, [activeProtocols]);
 
-  useEffect(() => {
-    fetchStreaks();
-  }, [fetchStreaks]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchStreaks is async; setState happens in a callback, not synchronously
+  useEffect(() => { fetchStreaks(); }, [fetchStreaks]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
