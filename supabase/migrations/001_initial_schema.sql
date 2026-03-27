@@ -13,7 +13,7 @@ CREATE TABLE public.users (
 -- Onboarding survey responses
 CREATE TABLE public.survey_responses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
   health_goals TEXT[] DEFAULT '{}',
   sleep_quality INTEGER CHECK (sleep_quality BETWEEN 1 AND 10),
   exercise_frequency TEXT,
@@ -153,13 +153,15 @@ ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_protocols ENABLE ROW LEVEL SECURITY;
 
--- Users can read/update their own profile
+-- Users can read/insert/update their own profile
 CREATE POLICY users_select ON public.users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY users_insert ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY users_update ON public.users FOR UPDATE USING (auth.uid() = id);
 
--- Users can manage their own survey
+-- Users can manage their own survey (SELECT, INSERT, UPDATE for upsert support)
 CREATE POLICY survey_select ON public.survey_responses FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY survey_insert ON public.survey_responses FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY survey_update ON public.survey_responses FOR UPDATE USING (auth.uid() = user_id);
 
 -- Users can manage their own chats
 CREATE POLICY chats_select ON public.chat_sessions FOR SELECT USING (auth.uid() = user_id);
