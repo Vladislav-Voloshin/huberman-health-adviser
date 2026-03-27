@@ -134,12 +134,12 @@ test.describe("Auth Page", () => {
 });
 
 test.describe("Auth Redirects", () => {
-  test("unauthenticated user redirected from /protocols to /auth", async ({
+  test("unauthenticated user can access /protocols without redirect", async ({
     page,
   }) => {
     await page.goto("/protocols");
-    await page.waitForURL("**/auth", { timeout: 10000 });
-    await expect(page).toHaveURL(/\/auth/);
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(/\/protocols/);
   });
 
   test("unauthenticated user redirected from /chat to /auth", async ({
