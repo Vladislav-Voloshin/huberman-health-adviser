@@ -1,14 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -16,62 +10,10 @@ import Link from "next/link";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 import { EmailAuthForm } from "@/components/auth/email-auth-form";
 import { PhoneAuthForm } from "@/components/auth/phone-auth-form";
+import { useAuth } from "@/components/auth/use-auth";
 
 export default function AuthPage() {
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [authMode, setAuthMode] = useState<"email" | "phone">("email");
-  const [otpSent, setOtpSent] = useState(false);
-
-  const supabase = createClient();
-
-  async function handleEmailSignUp() {
-    setLoading(true);
-    setMessage("");
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/onboarding` },
-    });
-    setMessage(error ? error.message : "Check your email for a confirmation link.");
-    setLoading(false);
-  }
-
-  async function handleEmailSignIn() {
-    setLoading(true);
-    setMessage("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { setMessage(error.message); } else { window.location.href = "/protocols"; }
-    setLoading(false);
-  }
-
-  async function handlePhoneOtp() {
-    setLoading(true);
-    setMessage("");
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    if (error) { setMessage(error.message); } else { setOtpSent(true); setMessage("We sent a 6-digit code to your phone."); }
-    setLoading(false);
-  }
-
-  async function handleVerifyOtp() {
-    setLoading(true);
-    setMessage("");
-    const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
-    if (error) { setMessage(error.message); } else { window.location.href = "/protocols"; }
-    setLoading(false);
-  }
-
-  async function handleSocialLogin(provider: "google" | "apple") {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) setMessage(error.message);
-  }
+  const auth = useAuth();
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
@@ -86,7 +28,7 @@ export default function AuthPage() {
           <CardDescription>Sign in to access your health protocols</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SocialLoginButton provider="google" onClick={() => handleSocialLogin("google")} />
+          <SocialLoginButton provider="google" onClick={() => auth.handleSocialLogin("google")} />
 
           <div className="relative">
             <Separator />
@@ -104,61 +46,61 @@ export default function AuthPage() {
             <TabsContent value="signin" className="space-y-4">
               <div className="flex gap-2">
                 <Button
-                  variant={authMode === "email" ? "default" : "outline"}
+                  variant={auth.authMode === "email" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => { setAuthMode("email"); setOtpSent(false); setMessage(""); }}
+                  onClick={() => auth.switchAuthMode("email")}
                 >
                   Email
                 </Button>
                 <Button
-                  variant={authMode === "phone" ? "default" : "outline"}
+                  variant={auth.authMode === "phone" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => { setAuthMode("phone"); setMessage(""); }}
+                  onClick={() => auth.switchAuthMode("phone")}
                 >
                   Phone
                 </Button>
               </div>
 
-              {authMode === "email" ? (
+              {auth.authMode === "email" ? (
                 <EmailAuthForm
-                  email={email}
-                  password={password}
-                  loading={loading}
+                  email={auth.email}
+                  password={auth.password}
+                  loading={auth.loading}
                   mode="signin"
-                  onEmailChange={setEmail}
-                  onPasswordChange={setPassword}
-                  onSubmit={handleEmailSignIn}
+                  onEmailChange={auth.setEmail}
+                  onPasswordChange={auth.setPassword}
+                  onSubmit={auth.handleEmailSignIn}
                 />
               ) : (
                 <PhoneAuthForm
-                  phone={phone}
-                  otp={otp}
-                  otpSent={otpSent}
-                  loading={loading}
-                  onPhoneChange={setPhone}
-                  onOtpChange={setOtp}
-                  onSendOtp={handlePhoneOtp}
-                  onVerifyOtp={handleVerifyOtp}
-                  onReset={() => { setOtpSent(false); setOtp(""); setMessage(""); }}
+                  phone={auth.phone}
+                  otp={auth.otp}
+                  otpSent={auth.otpSent}
+                  loading={auth.loading}
+                  onPhoneChange={auth.setPhone}
+                  onOtpChange={auth.setOtp}
+                  onSendOtp={auth.handlePhoneOtp}
+                  onVerifyOtp={auth.handleVerifyOtp}
+                  onReset={auth.resetOtp}
                 />
               )}
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4">
               <EmailAuthForm
-                email={email}
-                password={password}
-                loading={loading}
+                email={auth.email}
+                password={auth.password}
+                loading={auth.loading}
                 mode="signup"
-                onEmailChange={setEmail}
-                onPasswordChange={setPassword}
-                onSubmit={handleEmailSignUp}
+                onEmailChange={auth.setEmail}
+                onPasswordChange={auth.setPassword}
+                onSubmit={auth.handleEmailSignUp}
               />
             </TabsContent>
           </Tabs>
 
-          {message && (
-            <p className="text-sm text-center text-muted-foreground">{message}</p>
+          {auth.message && (
+            <p className="text-sm text-center text-muted-foreground">{auth.message}</p>
           )}
         </CardContent>
       </Card>
