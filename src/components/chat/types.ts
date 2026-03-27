@@ -1,4 +1,4 @@
-import type { ChatSession as DbChatSession, ChatSource } from "@/types/database";
+import type { ChatSession as DbChatSession, ChatSource } from "@/lib/types/database";
 
 export type ChatSession = Pick<DbChatSession, "id" | "title" | "protocol_id" | "created_at">;
 

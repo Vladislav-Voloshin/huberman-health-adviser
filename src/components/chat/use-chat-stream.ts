@@ -120,6 +120,7 @@ export function useChatStream({ userId, initialSessions, initialProtocolId }: Us
                   {
                     id: event.session_id,
                     title: userMessage.content.slice(0, 50),
+                    protocol_id: null,
                     created_at: new Date().toISOString(),
                   },
                   ...prev,

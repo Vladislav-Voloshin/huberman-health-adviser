@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-
-interface StreakData {
-  streak: number;
-  longest_streak: number;
-  total_days: number;
-}
+import type { StreaksResponse as StreakData } from "@/lib/types/database";
 
 export function useProtocolCompletions(
   protocolId: string,

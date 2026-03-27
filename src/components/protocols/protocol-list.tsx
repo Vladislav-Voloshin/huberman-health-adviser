@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import type { Protocol, ProtocolCategory } from "@/types/database";
+import type { Protocol, ProtocolCategoryRecord as ProtocolCategory } from "@/lib/types/database";
 
 const categoryMeta: Record<string, { icon: string; accent: string; bg: string }> = {
   sleep: { icon: "🌙", accent: "text-indigo-500", bg: "bg-indigo-500/10" },
