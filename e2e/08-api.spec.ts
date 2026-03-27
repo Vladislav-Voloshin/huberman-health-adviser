@@ -68,21 +68,41 @@ test.describe("API: Ingest Endpoint", () => {
       headers: { "Content-Type": "application/json" },
       data: { step: "extract-protocols" },
     });
-    // Ingest uses ADMIN_API_KEY header check, not Supabase session
-    expect([401, 500]).toContain(res.status());
+    // No Authorization header → always 401 (ADMIN_API_KEY check fails)
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 
-  test("POST /api/ingest with correct admin key and unknown step returns 400", async () => {
-    // Skip if ADMIN_API_KEY is not configured in CI
+  test("POST /api/ingest with wrong admin key returns 401", async () => {
     const res = await anonRequest.post("/api/ingest", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ADMIN_API_KEY || "test-key"}`,
+        Authorization: "Bearer deliberately-wrong-key",
       },
       data: { step: "nonexistent-step" },
     });
-    // Without matching ADMIN_API_KEY in CI, this returns 401
-    expect([400, 401]).toContain(res.status());
+    // Wrong key → always 401
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  test("POST /api/ingest with valid key but unknown step returns 400", async () => {
+    const adminKey = process.env.ADMIN_API_KEY;
+    test.skip(!adminKey, "Skipping: ADMIN_API_KEY not set");
+
+    const res = await anonRequest.post("/api/ingest", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminKey}`,
+      },
+      data: { step: "nonexistent-step" },
+    });
+    // Valid key but unknown step → 400
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain("Unknown step");
   });
 });
 
