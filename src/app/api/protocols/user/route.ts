@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
+import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
+import { z } from "zod";
+
+const userProtocolSchema = z.object({
+  protocol_id: z.string().uuid(),
+  action: z.enum(["activate", "deactivate", "remove"]),
+});
 
 export async function GET() {
   try {
@@ -20,11 +26,10 @@ export async function POST(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
-    const { protocol_id, action } = await request.json();
+    const body = await parseBody(request, userProtocolSchema);
+    if (body instanceof Response) return body;
 
-    if (!protocol_id || !action) {
-      return apiError("protocol_id and action required", 400);
-    }
+    const { protocol_id, action } = body;
 
     switch (action) {
       case "activate": {

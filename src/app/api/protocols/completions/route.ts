@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
+import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
+import { z } from "zod";
+
+const completionSchema = z.object({
+  protocol_id: z.string().uuid(),
+  tool_id: z.string().uuid(),
+  tz_offset: z.number().int().min(-720).max(720).optional(),
+});
 
 /** Get today's date in the user's local timezone using tz_offset (minutes). */
 function getLocalToday(request: NextRequest): string {
@@ -49,14 +56,13 @@ export async function POST(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
-    const { protocol_id, tool_id, tz_offset } = await request.json();
+    const body = await parseBody(request, completionSchema);
+    if (body instanceof Response) return body;
 
-    if (!protocol_id || !tool_id) {
-      return apiError("protocol_id and tool_id required", 400);
-    }
+    const { protocol_id, tool_id, tz_offset } = body;
 
     // Use client-provided timezone offset for local date
-    const offsetMinutes = typeof tz_offset === "number" ? tz_offset : 0;
+    const offsetMinutes = tz_offset ?? 0;
     const now = new Date();
     const local = new Date(now.getTime() - offsetMinutes * 60000);
     const today = local.toISOString().split("T")[0];
