@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
       return apiError("Query must be at least 2 characters", 400);
     }
 
-    const q = query.trim();
+    // Sanitize for PostgREST .or() — escape characters that break filter syntax
+    const q = query.trim().replace(/[%_\\(),."']/g, "");
 
     // Run both searches in parallel
     const [protocolResults, knowledgeResults] = await Promise.all([

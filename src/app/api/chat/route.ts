@@ -94,13 +94,19 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Save assistant message
-        await supabase.from("chat_messages").insert({
-          session_id: currentSessionId,
-          role: "assistant",
-          content: fullContent,
-          sources,
-        });
+        // Save assistant message and update session timestamp for recency sorting
+        await Promise.all([
+          supabase.from("chat_messages").insert({
+            session_id: currentSessionId,
+            role: "assistant",
+            content: fullContent,
+            sources,
+          }),
+          supabase
+            .from("chat_sessions")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", currentSessionId),
+        ]);
 
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
