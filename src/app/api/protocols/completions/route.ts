@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
 
+/** Get today's date in the user's local timezone using tz_offset (minutes). */
+function getLocalToday(request: NextRequest): string {
+  const offsetStr = new URL(request.url).searchParams.get("tz_offset");
+  const offsetMinutes = offsetStr ? parseInt(offsetStr, 10) : 0;
+  const now = new Date();
+  const local = new Date(now.getTime() - offsetMinutes * 60000);
+  return local.toISOString().split("T")[0];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
@@ -14,11 +23,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === "streaks") {
-      return getStreaks(user.id, protocolId, supabase);
+      return getStreaks(user.id, protocolId, supabase, request);
     }
 
-    // Default: get today's completions
-    const today = new Date().toISOString().split("T")[0];
+    // Default: get today's completions (using user's local date)
+    const today = getLocalToday(request);
 
     const { data: completions } = await supabase
       .from("protocol_completions")
@@ -40,13 +49,17 @@ export async function POST(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
-    const { protocol_id, tool_id } = await request.json();
+    const { protocol_id, tool_id, tz_offset } = await request.json();
 
     if (!protocol_id || !tool_id) {
       return apiError("protocol_id and tool_id required", 400);
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    // Use client-provided timezone offset for local date
+    const offsetMinutes = typeof tz_offset === "number" ? tz_offset : 0;
+    const now = new Date();
+    const local = new Date(now.getTime() - offsetMinutes * 60000);
+    const today = local.toISOString().split("T")[0];
 
     // Check if already completed today
     const { data: existing } = await supabase
@@ -86,7 +99,8 @@ export async function POST(request: NextRequest) {
 async function getStreaks(
   userId: string,
   protocolId: string,
-  supabase: import("@supabase/supabase-js").SupabaseClient
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  request: NextRequest
 ) {
   const { count: totalTools } = await supabase
     .from("protocol_tools")
@@ -123,10 +137,12 @@ async function getStreaks(
     return NextResponse.json({ streak: 0, longest_streak: 0, total_days: 0 });
   }
 
-  // Calculate current streak
+  // Calculate current streak (using user's local date)
   let streak = 0;
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const today = getLocalToday(request);
+  const yesterdayDate = new Date(today + "T12:00:00Z");
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = yesterdayDate.toISOString().split("T")[0];
 
   if (fullDates[0] === today || fullDates[0] === yesterday) {
     streak = 1;

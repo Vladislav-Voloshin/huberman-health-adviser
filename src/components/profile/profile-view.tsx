@@ -58,7 +58,8 @@ export function ProfileView({
     const results = await Promise.all(
       activeProtocols.map(async (up) => {
         try {
-          const res = await fetch(`/api/protocols/completions?protocol_id=${up.protocols.id}&type=streaks`);
+          const tz = new Date().getTimezoneOffset();
+          const res = await fetch(`/api/protocols/completions?protocol_id=${up.protocols.id}&type=streaks&tz_offset=${tz}`);
           if (res.ok) {
             const data = await res.json();
             return { protocol_title: up.protocols.title, ...data };
