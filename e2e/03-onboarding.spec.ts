@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { signInTestUser, TEST_USER } from "./helpers";
+import { signInTestUser } from "./helpers";
 
 test.describe("Onboarding Flow", () => {
   test("onboarding page redirects unauthenticated users to auth", async ({

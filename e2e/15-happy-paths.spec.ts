@@ -44,7 +44,6 @@ test.describe("P0 Happy Path: Browse → Detail → Add to Stack", () => {
 
     // Open first protocol detail
     const firstCard = cards.first();
-    const protocolTitle = await firstCard.textContent();
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 

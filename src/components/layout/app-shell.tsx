@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const navItems = [
   { href: "/protocols", label: "Protocols", icon: "📋" },
@@ -12,11 +12,11 @@ const navItems = [
   { href: "/profile", label: "Profile", icon: "👤" },
 ];
 
+const emptySubscribe = () => () => {};
+
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   if (!mounted) return <div className="w-8 h-8" />;
 
   return (
