@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const history = await fetchConversationHistory(supabase, currentSessionId);
 
     // Get relevant context via RAG
-    const { contextText, sources } = await fetchRAGContext(trimmedMessage);
+    const { contextText, sources } = await fetchRAGContext(trimmedMessage, log);
 
     // Build system prompt
     let systemPrompt = buildSystemPrompt(contextText);
@@ -196,7 +196,7 @@ async function fetchConversationHistory(
 }
 
 /** Fetch RAG context from Pinecone for the given query. */
-async function fetchRAGContext(query: string) {
+async function fetchRAGContext(query: string, log: Pick<typeof logger, "warn">) {
   let contextText = "";
   let sources: { type: string; title: string; chunk_id: string }[] = [];
 
@@ -215,7 +215,7 @@ async function fetchRAGContext(query: string) {
       .filter(Boolean)
       .join("\n\n---\n\n");
   } catch (err) {
-    logger.warn({ err }, "RAG unavailable");
+    log.warn({ err }, "RAG unavailable");
   }
 
   return { contextText, sources };
