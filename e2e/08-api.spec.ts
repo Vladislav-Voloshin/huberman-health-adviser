@@ -63,25 +63,46 @@ test.describe("API: User Protocols Endpoint", () => {
 });
 
 test.describe("API: Ingest Endpoint", () => {
-  test("POST /api/ingest without admin key returns non-5xx", async () => {
+  test("POST /api/ingest without admin key returns 401", async () => {
     const res = await anonRequest.post("/api/ingest", {
       headers: { "Content-Type": "application/json" },
       data: { step: "extract-protocols" },
     });
-    // In CI, ADMIN_API_KEY may not be set — endpoint may return 200, 401, or 500
-    expect(res.status()).toBeLessThan(503);
+    // No Authorization header → always 401 (ADMIN_API_KEY check fails)
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 
-  test("POST /api/ingest with admin key and unknown step returns error", async () => {
+  test("POST /api/ingest with wrong admin key returns 401", async () => {
     const res = await anonRequest.post("/api/ingest", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ADMIN_API_KEY || "test-key"}`,
+        Authorization: "Bearer deliberately-wrong-key",
       },
       data: { step: "nonexistent-step" },
     });
-    // Without matching ADMIN_API_KEY in CI, may return 200, 400, or 401
-    expect(res.status()).toBeLessThan(503);
+    // Wrong key → always 401
+    expect(res.status()).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
+
+  test("POST /api/ingest with valid key but unknown step returns 400", async () => {
+    const adminKey = process.env.ADMIN_API_KEY;
+    test.skip(!adminKey, "Skipping: ADMIN_API_KEY not set");
+
+    const res = await anonRequest.post("/api/ingest", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminKey}`,
+      },
+      data: { step: "nonexistent-step" },
+    });
+    // Valid key but unknown step → 400
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain("Unknown step");
   });
 });
 
