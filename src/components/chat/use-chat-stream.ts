@@ -21,12 +21,14 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    });
   }, []);
 
-  async function loadSession(sessionId: string) {
+  const loadSession = useCallback(async (sessionId: string) => {
     setLoadingSession(true);
     try {
       const res = await fetch(`/api/chat/sessions?session_id=${sessionId}`);
@@ -46,15 +48,15 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
     } finally {
       setLoadingSession(false);
     }
-  }
+  }, []);
 
-  function startNewChat() {
+  const startNewChat = useCallback(() => {
     setMessages([]);
     setActiveSession(null);
     setProtocolId(undefined);
-  }
+  }, []);
 
-  async function sendMessage() {
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || loading) return;
 
     const userMessage: Message = {
@@ -166,7 +168,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
       setLoading(false);
       setStreamingId(null);
     }
-  }
+  }, [input, loading, activeSession, userId, protocolId, scrollToBottom]);
 
   return {
     messages,
