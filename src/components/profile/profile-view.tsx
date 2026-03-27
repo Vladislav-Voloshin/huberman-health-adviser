@@ -109,7 +109,19 @@ export function ProfileView({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Profile</h1>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0">
+            {displayName
+              ? displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+              : profile?.email?.[0]?.toUpperCase() ?? "?"}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{displayName ?? "Profile"}</h1>
+            {displayName && (
+              <p className="text-sm text-muted-foreground">{profile?.email}</p>
+            )}
+          </div>
+        </div>
         <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
           Edit Profile
         </Button>
