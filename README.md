@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Craftwell
+
+AI-powered health protocol recommendations based on Huberman Lab research. Browse evidence-based protocols, track daily completions, and chat with an AI assistant grounded in peer-reviewed sources.
+
+**Production:** https://craftwell.vercel.app
+
+## Tech Stack
+
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend:** Next.js API routes, Claude API (Anthropic)
+- **Database:** Supabase (PostgreSQL + Auth + RLS)
+- **Search:** Pinecone (vector), Voyage AI (embeddings)
+- **Testing:** Playwright (E2E), ESLint, Prettier
+- **Deployment:** Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- npm
+- A Supabase project
+- API keys for: Anthropic, Pinecone, Voyage AI
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/Vladislav-Voloshin/huberman-health-adviser.git
+cd huberman-health-adviser
+npm install
+```
+
+### 2. Configure environment
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.local.example .env.local
+```
+
+See [Environment Variables](#environment-variables) for details on each key.
+
+### 3. Run database migrations
+
+Open the [Supabase SQL Editor](https://supabase.com/dashboard) and run:
+
+```bash
+# Initial schema
+supabase/migrations/001_initial_schema.sql
+
+# Completions table
+scripts/create-completions-table.sql
+
+# Profile fields
+scripts/migrations/001-add-profile-fields.sql
+
+# RLS policies
+scripts/fix-onboarding-rls.sql
+```
+
+### 4. Seed the knowledge base
+
+Trigger the ingestion pipeline to populate protocols and embeddings:
+
+```bash
+curl -X POST http://localhost:3000/api/ingest \
+  -H "x-api-key: YOUR_ADMIN_API_KEY"
+```
+
+### 5. Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file with the following:
 
-## Learn More
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-side only) |
+| `ANTHROPIC_API_KEY` | Yes | Claude API key for chat and protocol extraction |
+| `PINECONE_API_KEY` | Yes | Pinecone vector database key |
+| `PINECONE_INDEX` | Yes | Pinecone index name (default: `craftwell`) |
+| `VOYAGE_API_KEY` | Yes | Voyage AI key for text embeddings |
+| `YOUTUBE_API_KEY` | No | YouTube Data API key (for podcast scraping) |
+| `ADMIN_API_KEY` | No | Protects the `/api/ingest` endpoint |
+| `NEXT_PUBLIC_APP_URL` | No | App URL (default: `http://localhost:3000`) |
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript type checker |
+| `npm run format` | Format code with Prettier |
+| `npm run format:check` | Check formatting |
+| `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run test:e2e:ui` | Run E2E tests with UI |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/              # Next.js App Router pages and API routes
+│   ├── api/          # REST endpoints (chat, search, protocols, profile, ingest)
+│   ├── auth/         # Authentication page
+│   ├── chat/         # AI chat interface
+│   ├── onboarding/   # Health survey wizard
+│   ├── profile/      # User profile and streaks
+│   └── protocols/    # Protocol browsing and detail pages
+├── components/       # React components (chat, layout, protocols, profile, ui)
+└── lib/              # Shared utilities
+    ├── ingestion/    # Content scrapers and embedding pipeline
+    ├── pinecone/     # Vector search client and embeddings
+    └── supabase/     # Supabase client, server, and middleware
+e2e/                  # Playwright E2E test suites
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Automated PR Review
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This repo uses a GitHub Actions workflow (`.github/workflows/codex-pr-review.yml`) that runs an automatic Codex review on pull requests and sends a Telegram notification when a PR is ready for approval.
+
+Required secrets: `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
