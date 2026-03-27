@@ -7,7 +7,7 @@ import { ProtocolProgress } from "./protocol-progress";
 import { ProtocolChecklist } from "./protocol-checklist";
 import { ProtocolChatCta } from "./protocol-chat-cta";
 import { useProtocolCompletions } from "./use-protocol-completions";
-import type { Protocol, ProtocolTool } from "@/types/database";
+import type { Protocol, ProtocolTool } from "@/lib/types/database";
 
 export function ProtocolDetail({
   protocol,

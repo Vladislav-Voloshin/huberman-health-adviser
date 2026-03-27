@@ -1,16 +1,5 @@
 import { ProtocolToolCard } from "./protocol-tool-card";
-
-interface Tool {
-  id: string;
-  title: string;
-  description: string;
-  instructions: string;
-  effectiveness_rank: number;
-  timing?: string;
-  duration?: string;
-  frequency?: string;
-  notes?: string;
-}
+import type { ProtocolTool } from "@/lib/types/database";
 
 export function ProtocolChecklist({
   tools,
@@ -20,7 +9,7 @@ export function ProtocolChecklist({
   togglingToolId,
   onToggle,
 }: {
-  tools: Tool[];
+  tools: ProtocolTool[];
   isLoggedIn: boolean;
   isActive: boolean;
   completedToolIds: Set<string>;

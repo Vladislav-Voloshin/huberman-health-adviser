@@ -2,21 +2,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Tool {
-  id: string;
-  title: string;
-  description: string;
-  instructions: string;
-  effectiveness_rank: number;
-  timing?: string;
-  duration?: string;
-  frequency?: string;
-  notes?: string;
-}
+import type { ProtocolTool } from "@/lib/types/database";
 
 interface ProtocolToolCardProps {
-  tool: Tool;
+  tool: ProtocolTool;
   index: number;
   isLoggedIn: boolean;
   isActive: boolean;

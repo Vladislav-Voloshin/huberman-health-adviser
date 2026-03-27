@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import type { StreakData } from "@/types/database";
+import type { StreaksResponse as StreakData } from "@/lib/types/database";
 
 interface ProtocolProgressProps {
   completedCount: number;

@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-interface StreakData {
-  streak: number;
-  longest_streak: number;
-  total_days: number;
-}
+import type { StreaksResponse as StreakData } from "@/lib/types/database";
 
 export function ProtocolHeader({
   title,
