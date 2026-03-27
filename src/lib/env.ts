@@ -4,11 +4,11 @@ import { z } from 'zod';
 const coreSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
 /** Full server env — only required by AI/ingestion routes. */
 const serverSchema = coreSchema.extend({
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().min(1),
   PINECONE_API_KEY: z.string().min(1),
   PINECONE_INDEX: z.string().default('craftwell'),
