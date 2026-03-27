@@ -18,7 +18,8 @@ export async function checkRateLimit(
 
   const { count } = await supabase
     .from("chat_messages")
-    .select("*", { count: "exact", head: true })
+    .select("*, chat_sessions!inner(user_id)", { count: "exact", head: true })
+    .eq("chat_sessions.user_id", userId)
     .eq("role", "user")
     .gte("created_at", since);
 
