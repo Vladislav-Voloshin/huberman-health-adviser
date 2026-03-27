@@ -1,0 +1,49 @@
+import { z } from 'zod';
+
+const serverSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  ANTHROPIC_API_KEY: z.string().min(1),
+  PINECONE_API_KEY: z.string().min(1),
+  PINECONE_INDEX: z.string().default('craftwell'),
+  VOYAGE_API_KEY: z.string().min(1),
+  YOUTUBE_API_KEY: z.string().min(1),
+  ADMIN_API_KEY: z.string().min(1),
+});
+
+const clientSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+});
+
+export type ServerEnv = z.infer<typeof serverSchema>;
+export type ClientEnv = z.infer<typeof clientSchema>;
+
+function validateEnv<T>(schema: z.ZodType<T>, data: Record<string, unknown>, label: string): T {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    const formatted = result.error.issues
+      .map((issue) => `  ${issue.path.join('.')}: ${issue.message}`)
+      .join('\n');
+    throw new Error(`Missing or invalid environment variables (${label}):\n${formatted}`);
+  }
+  return result.data;
+}
+
+let _serverEnv: ServerEnv | undefined;
+let _clientEnv: ClientEnv | undefined;
+
+export function serverEnv(): ServerEnv {
+  if (!_serverEnv) {
+    _serverEnv = validateEnv(serverSchema, process.env, 'server');
+  }
+  return _serverEnv;
+}
+
+export function clientEnv(): ClientEnv {
+  if (!_clientEnv) {
+    _clientEnv = validateEnv(clientSchema, process.env, 'client');
+  }
+  return _clientEnv;
+}

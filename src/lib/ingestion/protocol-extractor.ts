@@ -8,10 +8,11 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { getSupabaseAdmin as getSupabase } from "./shared";
+import { serverEnv } from "@/lib/env";
 
 function getAnthropic() {
   return new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
+    apiKey: serverEnv().ANTHROPIC_API_KEY,
   });
 }
 
