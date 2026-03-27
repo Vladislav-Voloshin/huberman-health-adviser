@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverEnv } from "@/lib/env";
 import { runPodcastScraper } from "@/lib/ingestion/podcast-scraper";
 import { runNewsletterScraper } from "@/lib/ingestion/newsletter-scraper";
 import { chunkPodcastEpisodes, chunkNewsletters } from "@/lib/ingestion/chunker";
@@ -8,7 +9,7 @@ import { runProtocolExtraction } from "@/lib/ingestion/protocol-extractor";
 export async function POST(request: NextRequest) {
   // Simple API key auth for admin operations
   const authHeader = request.headers.get("authorization");
-  const adminKey = process.env.ADMIN_API_KEY;
+  const { ADMIN_API_KEY: adminKey } = serverEnv();
 
   if (!adminKey || authHeader !== `Bearer ${adminKey}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

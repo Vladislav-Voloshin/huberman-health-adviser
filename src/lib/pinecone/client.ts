@@ -1,11 +1,12 @@
 import { Pinecone } from '@pinecone-database/pinecone';
+import { serverEnv } from '@/lib/env';
 
 let pineconeClient: Pinecone | null = null;
 
 export function getPinecone() {
   if (!pineconeClient) {
     pineconeClient = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY!,
+      apiKey: serverEnv().PINECONE_API_KEY,
     });
   }
   return pineconeClient;
@@ -13,7 +14,7 @@ export function getPinecone() {
 
 export function getIndex() {
   const pc = getPinecone();
-  return pc.index(process.env.PINECONE_INDEX || 'craftwell');
+  return pc.index(serverEnv().PINECONE_INDEX);
 }
 
 export interface VectorMetadata {

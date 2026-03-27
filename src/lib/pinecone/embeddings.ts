@@ -1,16 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
-
-function getVoyageApiKey(): string {
-  const key = process.env.VOYAGE_API_KEY;
-  if (!key) {
-    throw new Error("VOYAGE_API_KEY environment variable is required for embeddings");
-  }
-  return key;
-}
+import { serverEnv } from '@/lib/env';
 
 export function getAnthropicClient() {
   return new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
+    apiKey: serverEnv().ANTHROPIC_API_KEY,
   });
 }
 
@@ -19,7 +12,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getVoyageApiKey()}`,
+      Authorization: `Bearer ${serverEnv().VOYAGE_API_KEY}`,
     },
     body: JSON.stringify({
       input: [text],
@@ -45,7 +38,7 @@ export async function getEmbeddings(texts: string[]): Promise<number[][]> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${getVoyageApiKey()}`,
+        Authorization: `Bearer ${serverEnv().VOYAGE_API_KEY}`,
       },
       body: JSON.stringify({
         input: batch,

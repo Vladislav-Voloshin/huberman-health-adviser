@@ -7,12 +7,7 @@
  */
 
 import { getSupabaseAdmin as getSupabase } from "./shared";
-
-function getYouTubeApiKey(): string {
-  const key = process.env.YOUTUBE_API_KEY;
-  if (!key) throw new Error("YOUTUBE_API_KEY not set");
-  return key;
-}
+import { serverEnv } from "@/lib/env";
 const HUBERMAN_CHANNEL_ID = "UC2D2CMWXMOVWx7giW1n3LIg"; // Huberman Lab
 const API_BASE = "https://www.googleapis.com/youtube/v3";
 
@@ -33,7 +28,7 @@ async function fetchChannelVideoIds(maxResults = 500): Promise<string[]> {
 
   while (videoIds.length < maxResults) {
     const params = new URLSearchParams({
-      key: getYouTubeApiKey(),
+      key: serverEnv().YOUTUBE_API_KEY,
       channelId: HUBERMAN_CHANNEL_ID,
       part: "id",
       type: "video",
@@ -75,7 +70,7 @@ async function fetchVideoDetails(videoIds: string[]): Promise<YouTubeVideo[]> {
   for (let i = 0; i < videoIds.length; i += 50) {
     const batch = videoIds.slice(i, i + 50);
     const params = new URLSearchParams({
-      key: getYouTubeApiKey(),
+      key: serverEnv().YOUTUBE_API_KEY,
       id: batch.join(","),
       part: "snippet",
       maxResults: "50",
