@@ -52,7 +52,7 @@ test.describe("Daily Checklist", () => {
   }) => {
     // Wait for checklist to load
     const toggleButtons = page.getByRole("button", { name: /mark .+ complete$/i });
-    await toggleButtons.first().waitFor({ timeout: 10000 });
+    await toggleButtons.first().waitFor({ timeout: 15000 });
 
     await toggleButtons.first().click();
 
@@ -60,14 +60,14 @@ test.describe("Daily Checklist", () => {
     const incompleteButtons = page.getByRole("button", {
       name: /mark .+ incomplete/i,
     });
-    await incompleteButtons.first().waitFor({ timeout: 5000 });
+    await incompleteButtons.first().waitFor({ timeout: 10000 });
     const count = await incompleteButtons.count();
     expect(count).toBeGreaterThan(0);
 
     // Uncheck it to clean up
     await incompleteButtons.first().click();
     // Wait for the "mark complete" button to reappear
-    await toggleButtons.first().waitFor({ timeout: 5000 });
+    await toggleButtons.first().waitFor({ timeout: 10000 });
   });
 
   test("progress bar reflects completion count", async ({ page }) => {

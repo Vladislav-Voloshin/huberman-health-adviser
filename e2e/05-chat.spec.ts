@@ -66,6 +66,9 @@ test.describe("Chat Interface", () => {
   test("sending a message shows user bubble and streaming response", async ({
     page,
   }) => {
+    // This test requires a live ANTHROPIC_API_KEY — skip in CI when unavailable
+    test.skip(!process.env.ANTHROPIC_API_KEY, "Skipping: ANTHROPIC_API_KEY not set");
+
     const input = page.getByPlaceholder(/ask about health protocols/i);
     await input.fill("What is cold exposure?");
 
@@ -93,11 +96,11 @@ test.describe("Chat Interface", () => {
 
   test("can send message with Enter key", async ({ page }) => {
     const input = page.getByPlaceholder(/ask about health protocols/i);
-    await input.fill("Hello");
+    await input.fill("Hello from e2e test");
     await input.press("Enter");
 
-    // User message should appear
-    await expect(page.getByText("Hello")).toBeVisible();
+    // User message should appear (first() to avoid sidebar duplicates)
+    await expect(page.getByText("Hello from e2e test").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("Shift+Enter adds newline instead of sending", async ({ page }) => {

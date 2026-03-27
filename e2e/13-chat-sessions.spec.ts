@@ -49,6 +49,8 @@ test.describe("Chat Session Management", () => {
   });
 
   test("assistant response renders markdown formatting", async ({ page }) => {
+    test.skip(!process.env.ANTHROPIC_API_KEY, "Skipping: ANTHROPIC_API_KEY not set");
+
     const input = page.getByPlaceholder(/ask about health protocols/i);
     await input.fill("List 3 tips for better sleep");
 

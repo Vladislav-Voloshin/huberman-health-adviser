@@ -20,21 +20,21 @@ test.describe("Profile Page", () => {
   });
 
   test("shows Account information card", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Account") || content?.includes("account")
     ).toBeTruthy();
   });
 
   test("shows Health Profile section", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Health") || content?.includes("Profile")
     ).toBeTruthy();
   });
 
   test("shows My Protocol Stack section", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Protocol") ||
         content?.includes("protocol") ||
@@ -58,7 +58,7 @@ test.describe("Profile Page", () => {
   });
 
   test("protocol stack section exists on profile", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     // Should mention protocols section — either active protocols or browse link
     expect(
       content?.includes("Protocol") ||

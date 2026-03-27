@@ -197,7 +197,7 @@ test.describe("P0 Happy Path: Search and Filter Protocols", () => {
     await page.waitForURL(/\/protocols\/.+/);
 
     // Protocol detail should load
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(content?.length).toBeGreaterThan(100);
   });
 });

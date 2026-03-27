@@ -23,7 +23,7 @@ test.describe("Onboarding Flow", () => {
     if (page.url().includes("/auth")) return;
 
     if (page.url().includes("/onboarding")) {
-      const content = await page.textContent("body");
+      const content = await page.innerText("body");
       expect(
         content?.includes("health goals") || content?.includes("Welcome")
       ).toBeTruthy();

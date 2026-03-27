@@ -29,7 +29,7 @@ test.describe("Protocol Listing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Should have an "All" filter and at least some category filters
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(content).toContain("All");
 
     // Check for at least a few categories
@@ -114,7 +114,7 @@ test.describe("Protocol Detail", () => {
     await page.waitForURL(/\/protocols\/.+/);
 
     // Should show protocol content
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(content?.length).toBeGreaterThan(100);
   });
 
@@ -146,7 +146,7 @@ test.describe("Protocol Detail", () => {
     await page.waitForURL(/\/protocols\/.+/);
 
     // Should display ranked tools
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     // Tools should have numbered ranks or descriptions
     expect(
       content?.includes("instructions") ||
@@ -214,7 +214,7 @@ test.describe("Protocol Detail", () => {
       expect(href).toContain("/chat");
     } else {
       // Chat CTA might be text-based
-      const content = await page.textContent("body");
+      const content = await page.innerText("body");
       expect(
         content?.includes("questions") ||
           content?.includes("chat") ||
