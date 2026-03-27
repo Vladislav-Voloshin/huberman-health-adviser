@@ -2,7 +2,10 @@ export interface User {
   id: string;
   email: string;
   phone?: string;
-  display_name?: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  age?: number | null;
   avatar_url?: string;
   onboarding_completed: boolean;
   created_at: string;
@@ -119,3 +122,86 @@ export interface Newsletter {
   ingested: boolean;
   created_at: string;
 }
+
+export interface UserProtocol {
+  id: string;
+  user_id: string;
+  protocol_id: string;
+  started_at: string;
+  is_active: boolean;
+}
+
+export interface ProtocolCompletion {
+  id: string;
+  user_id: string;
+  protocol_id: string;
+  tool_id: string;
+  completed_date: string;
+  created_at: string;
+}
+
+export interface StreakData {
+  streak: number;
+  longest_streak: number;
+  total_days: number;
+}
+
+// --- API Response Types ---
+
+export interface SearchResponse {
+  protocols: Protocol[];
+  knowledge: KnowledgeResult[];
+}
+
+export interface KnowledgeResult {
+  score: number;
+  source_type: string;
+  source_title: string;
+  content: string;
+}
+
+export interface CompletionsResponse {
+  completed_tool_ids: string[];
+  date: string;
+}
+
+export interface CompletionToggleResponse {
+  status: "completed" | "uncompleted";
+}
+
+export type StreakResponse = StreakData;
+
+export interface ProfileResponse {
+  profile: User | null;
+  survey: SurveyResponse | null;
+}
+
+export interface ProfileUpdateRequest {
+  profile?: {
+    display_name?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    age?: number | null;
+  };
+  survey?: {
+    health_goals: string[];
+    sleep_quality: number;
+    exercise_frequency: string;
+    stress_level: number;
+    supplement_experience: string;
+    focus_areas: string[];
+  };
+}
+
+export interface UserProtocolAction {
+  protocol_id: string;
+  action: "activate" | "deactivate" | "remove";
+}
+
+export interface ChatRequest {
+  message: string;
+  session_id?: string;
+  protocol_id?: string;
+}
+
+export type ChatStreamEventType = "meta" | "text" | "error" | "done";

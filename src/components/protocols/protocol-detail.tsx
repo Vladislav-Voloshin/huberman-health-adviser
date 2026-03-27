@@ -8,35 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ProtocolToolCard } from "./protocol-tool-card";
 import { ProtocolProgress } from "./protocol-progress";
-
-interface Protocol {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  effectiveness_rank: number;
-  difficulty: string;
-  time_commitment: string;
-  tags: string[];
-}
-
-interface Tool {
-  id: string;
-  title: string;
-  description: string;
-  instructions: string;
-  effectiveness_rank: number;
-  timing?: string;
-  duration?: string;
-  frequency?: string;
-  notes?: string;
-}
-
-interface StreakData {
-  streak: number;
-  longest_streak: number;
-  total_days: number;
-}
+import type { Protocol, ProtocolTool, StreakData } from "@/types/database";
 
 export function ProtocolDetail({
   protocol,
@@ -45,7 +17,7 @@ export function ProtocolDetail({
   isLoggedIn = false,
 }: {
   protocol: Protocol;
-  tools: Tool[];
+  tools: ProtocolTool[];
   isActive?: boolean;
   isLoggedIn?: boolean;
 }) {
