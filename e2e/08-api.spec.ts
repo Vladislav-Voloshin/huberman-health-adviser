@@ -77,7 +77,7 @@ test.describe("API: Ingest Endpoint", () => {
     const res = await anonRequest.post("/api/ingest", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer huberman-admin-2026-secret",
+        Authorization: `Bearer ${process.env.ADMIN_API_KEY || "test-key"}`,
       },
       data: { step: "nonexistent-step" },
     });

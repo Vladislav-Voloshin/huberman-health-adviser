@@ -43,5 +43,10 @@ export function handleApiError(err: unknown) {
   }
   const message = err instanceof Error ? err.message : String(err);
   console.error("[API Error]", message);
-  return apiError(message, 500);
+  return apiError(
+    process.env.NODE_ENV === "production"
+      ? "Internal server error"
+      : message,
+    500
+  );
 }
