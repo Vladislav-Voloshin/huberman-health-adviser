@@ -34,3 +34,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Automated PR Review
+
+This repo includes a GitHub Actions workflow at `.github/workflows/codex-pr-review.yml` that runs an automatic Codex review whenever a pull request is opened, reopened, marked ready for review, or updated. It also sends a Telegram message that the PR is waiting for your approval.
+
+Setup:
+
+1. Add repository secrets named `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`.
+2. Push the workflow to the default branch.
+3. Open or update a pull request to trigger the review bot and Telegram alert.
+
+Notes:
+
+- The workflow uses the official `openai/codex-action`.
+- Reviews are posted as a single upserted PR comment so updates do not spam the thread.
+- The workflow uses `pull_request_target` so reviews and Telegram alerts can run for forked PRs too.
+- To reduce risk, it checks out the PR merge ref, avoids persistent checkout credentials, and runs Codex in a read-only sandbox.
