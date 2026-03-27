@@ -14,9 +14,11 @@ export type { ChatSession };
 export function ChatInterface({
   userId,
   sessions: initialSessions,
+  initialProtocolId,
 }: {
   userId: string;
   sessions: ChatSession[];
+  initialProtocolId?: string;
 }) {
   const {
     messages,
@@ -32,7 +34,7 @@ export function ChatInterface({
     loadSession,
     startNewChat,
     sendMessage,
-  } = useChatStream({ userId, initialSessions });
+  } = useChatStream({ userId, initialSessions, initialProtocolId });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
