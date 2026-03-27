@@ -14,16 +14,20 @@ export async function GET(request: NextRequest) {
       return apiError("Query must be at least 2 characters", 400);
     }
 
-    // Sanitize for PostgREST .or() — escape characters that break filter syntax
-    const q = query.trim().replace(/[%_\\(),."']/g, "");
+    // Strip PostgREST filter-syntax characters that could break .or() parsing.
+    // Commas, parens, and dots are structural; %, _ are LIKE wildcards.
+    const q = query.trim().replace(/[%_(),."'\\]/g, "");
 
     if (q.length < 2) {
       return apiError("Query must contain at least 2 searchable characters", 400);
     }
 
+    // Semantic search uses the original trimmed query (no stripping needed)
+    const semanticQuery = query.trim();
+
     // Run both searches in parallel
     const [protocolResults, knowledgeResults] = await Promise.all([
-      // 1. Protocol text search via Supabase
+      // 1. Protocol text search — use individual .ilike() filters to avoid .or() injection
       supabase
         .from("protocols")
         .select("id, title, slug, category, description, effectiveness_rank, difficulty")
@@ -34,7 +38,7 @@ export async function GET(request: NextRequest) {
       // 2. Semantic search via Pinecone
       (async () => {
         try {
-          const embedding = await getEmbedding(q);
+          const embedding = await getEmbedding(semanticQuery);
           const matches = await queryVectors(embedding, 8);
           return matches.map((m) => ({
             score: m.score,

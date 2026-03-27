@@ -95,6 +95,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/** Compute the number of days between two YYYY-MM-DD strings using UTC to avoid DST issues. */
+function daysBetween(a: string, b: string): number {
+  const msA = Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10));
+  const msB = Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10));
+  return Math.round((msA - msB) / 86400000);
+}
+
 /** Calculate streak data for a protocol. */
 async function getStreaks(
   userId: string,
@@ -147,9 +154,7 @@ async function getStreaks(
   if (fullDates[0] === today || fullDates[0] === yesterday) {
     streak = 1;
     for (let i = 1; i < fullDates.length; i++) {
-      const prev = new Date(fullDates[i - 1]);
-      const curr = new Date(fullDates[i]);
-      const diffDays = (prev.getTime() - curr.getTime()) / 86400000;
+      const diffDays = daysBetween(fullDates[i - 1], fullDates[i]);
       if (diffDays === 1) {
         streak++;
       } else {
@@ -162,9 +167,7 @@ async function getStreaks(
   let longestStreak = 1;
   let currentRun = 1;
   for (let i = 1; i < fullDates.length; i++) {
-    const prev = new Date(fullDates[i - 1]);
-    const curr = new Date(fullDates[i]);
-    const diffDays = (prev.getTime() - curr.getTime()) / 86400000;
+    const diffDays = daysBetween(fullDates[i - 1], fullDates[i]);
     if (diffDays === 1) {
       currentRun++;
       longestStreak = Math.max(longestStreak, currentRun);
