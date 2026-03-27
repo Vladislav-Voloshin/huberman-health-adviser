@@ -39,7 +39,7 @@ export type ProtocolCategory =
   | "brain-performance"
   | "longevity";
 
-export type ProtocolDifficulty = "easy" | "moderate" | "hard";
+export type ProtocolDifficulty = "easy" | "moderate" | "advanced";
 
 export interface ProtocolTool {
   id: string;
@@ -97,12 +97,12 @@ export interface SurveyResponse {
   id: string;
   user_id: string;
   health_goals: string[];
-  sleep_quality: string;
+  sleep_quality: number;
   exercise_frequency: string;
-  supplement_use: string;
-  diet_type: string;
+  stress_level: number;
+  supplement_experience: string | null;
+  focus_areas: string[];
   created_at: string;
-  updated_at: string;
 }
 
 // ============================================================

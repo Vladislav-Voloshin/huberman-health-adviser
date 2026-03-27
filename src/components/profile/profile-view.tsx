@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ProfileEditor } from "./profile-editor";
+import type { SurveyResponse } from "@/lib/types/database";
 
 interface UserProtocol {
   id: string;
@@ -26,14 +27,10 @@ export interface ProfileData {
   created_at: string;
 }
 
-export interface SurveyData {
-  health_goals: string[];
-  sleep_quality: number;
-  exercise_frequency: string;
-  stress_level: number;
-  supplement_experience?: string;
-  focus_areas: string[];
-}
+export type SurveyData = Pick<
+  SurveyResponse,
+  "health_goals" | "sleep_quality" | "exercise_frequency" | "stress_level" | "supplement_experience" | "focus_areas"
+>;
 
 interface ProfileViewProps {
   profile: ProfileData | null;
