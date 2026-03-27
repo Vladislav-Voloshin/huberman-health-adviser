@@ -3,13 +3,29 @@
  *
  * Tests API endpoints for proper auth, response format, and error handling.
  * Unauthenticated API requests should return 401 JSON (not redirect).
+ *
+ * Uses a fresh APIRequestContext (no cookies) to ensure requests are truly
+ * unauthenticated — the default `request` fixture can inherit cookies from
+ * previous test sign-ins.
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect, APIRequestContext } from "@playwright/test";
+
+let anonRequest: APIRequestContext;
+
+test.beforeAll(async ({ playwright }) => {
+  anonRequest = await playwright.request.newContext({
+    baseURL: "http://localhost:3000",
+  });
+});
+
+test.afterAll(async () => {
+  await anonRequest.dispose();
+});
 
 test.describe("API: Chat Endpoint", () => {
-  test("POST /api/chat without auth returns 401", async ({ request }) => {
-    const res = await request.post("/api/chat", {
+  test("POST /api/chat without auth returns 401", async () => {
+    const res = await anonRequest.post("/api/chat", {
       headers: { "Content-Type": "application/json" },
       data: { message: "test" },
     });
@@ -20,19 +36,15 @@ test.describe("API: Chat Endpoint", () => {
 });
 
 test.describe("API: User Protocols Endpoint", () => {
-  test("GET /api/protocols/user without auth returns 401", async ({
-    request,
-  }) => {
-    const res = await request.get("/api/protocols/user");
+  test("GET /api/protocols/user without auth returns 401", async () => {
+    const res = await anonRequest.get("/api/protocols/user");
     expect(res.status()).toBe(401);
     const body = await res.json();
     expect(body.error).toBeTruthy();
   });
 
-  test("POST /api/protocols/user without auth returns 401", async ({
-    request,
-  }) => {
-    const res = await request.post("/api/protocols/user", {
+  test("POST /api/protocols/user without auth returns 401", async () => {
+    const res = await anonRequest.post("/api/protocols/user", {
       headers: { "Content-Type": "application/json" },
       data: { protocol_id: "test", action: "activate" },
     });
@@ -43,10 +55,8 @@ test.describe("API: User Protocols Endpoint", () => {
 });
 
 test.describe("API: Ingest Endpoint", () => {
-  test("POST /api/ingest without admin key returns 401", async ({
-    request,
-  }) => {
-    const res = await request.post("/api/ingest", {
+  test("POST /api/ingest without admin key returns 401", async () => {
+    const res = await anonRequest.post("/api/ingest", {
       headers: { "Content-Type": "application/json" },
       data: { step: "extract-protocols" },
     });
@@ -55,10 +65,8 @@ test.describe("API: Ingest Endpoint", () => {
     expect(body.error).toBeTruthy();
   });
 
-  test("POST /api/ingest with correct admin key and unknown step returns 400", async ({
-    request,
-  }) => {
-    const res = await request.post("/api/ingest", {
+  test("POST /api/ingest with correct admin key and unknown step returns 400", async () => {
+    const res = await anonRequest.post("/api/ingest", {
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer huberman-admin-2026-secret",

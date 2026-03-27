@@ -13,6 +13,8 @@ test.describe("Protocol Search", () => {
     await signInTestUser(page);
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
+    // Wait for protocol cards to load from Supabase
+    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
   });
 
   test("shows search input on protocols page", async ({ page }) => {
