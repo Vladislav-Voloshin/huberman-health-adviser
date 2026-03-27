@@ -48,8 +48,13 @@ export default function HomePage() {
               { icon: "🌙", label: "Sleep" },
               { icon: "🧠", label: "Focus" },
               { icon: "💪", label: "Exercise" },
+              { icon: "❤️", label: "Stress" },
+              { icon: "🍎", label: "Nutrition" },
+              { icon: "⚡", label: "Hormones" },
               { icon: "🧊", label: "Cold/Heat" },
-              { icon: "⚡", label: "Dopamine" },
+              { icon: "☀️", label: "Light" },
+              { icon: "🎯", label: "Motivation" },
+              { icon: "😊", label: "Mental Health" },
             ].map((cat) => (
               <div
                 key={cat.label}

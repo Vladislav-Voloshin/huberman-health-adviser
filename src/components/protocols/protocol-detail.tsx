@@ -58,7 +58,8 @@ export function ProtocolDetail({
   const fetchCompletions = useCallback(async () => {
     if (!isLoggedIn || !isActive) return;
     try {
-      const res = await fetch(`/api/protocols/completions?protocol_id=${protocol.id}`);
+      const tz = new Date().getTimezoneOffset();
+      const res = await fetch(`/api/protocols/completions?protocol_id=${protocol.id}&tz_offset=${tz}`);
       if (res.ok) {
         const data = await res.json();
         setCompletedToolIds(new Set(data.completed_tool_ids));
@@ -71,7 +72,8 @@ export function ProtocolDetail({
   const fetchStreaks = useCallback(async () => {
     if (!isLoggedIn || !isActive) return;
     try {
-      const res = await fetch(`/api/protocols/completions?protocol_id=${protocol.id}&type=streaks`);
+      const tz = new Date().getTimezoneOffset();
+      const res = await fetch(`/api/protocols/completions?protocol_id=${protocol.id}&type=streaks&tz_offset=${tz}`);
       if (res.ok) {
         const data = await res.json();
         setStreakData(data);
@@ -119,6 +121,7 @@ export function ProtocolDetail({
         body: JSON.stringify({
           protocol_id: protocol.id,
           tool_id: toolId,
+          tz_offset: new Date().getTimezoneOffset(),
         }),
       });
       if (res.ok) {
