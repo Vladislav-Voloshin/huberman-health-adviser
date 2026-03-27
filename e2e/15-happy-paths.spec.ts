@@ -80,16 +80,15 @@ test.describe("P0 Happy Path: Protocol → Chat about it", () => {
 
     // Navigate to chat via bottom nav
     const chatLink = page.getByRole("link", { name: /chat/i });
-    if (await chatLink.isVisible()) {
-      await chatLink.click();
-      await page.waitForURL(/(\/chat|\/auth)/, { timeout: 10000 });
+    await expect(chatLink).toBeVisible();
+    await chatLink.click();
+    await page.waitForURL(/(\/chat|\/auth)/, { timeout: 10000 });
 
-      // Session may expire mid-test — only assert if we reached chat
-      if (page.url().includes("/chat")) {
-        await expect(
-          page.getByPlaceholder(/ask about health protocols/i)
-        ).toBeVisible();
-      }
+    // Session may expire mid-test — only assert if we reached chat
+    if (page.url().includes("/chat")) {
+      await expect(
+        page.getByPlaceholder(/ask about health protocols/i)
+      ).toBeVisible();
     }
   });
 });
@@ -107,27 +106,24 @@ test.describe("P0 Happy Path: Full Navigation Cycle", () => {
 
     // Go to chat
     const chatLink = page.getByRole("link", { name: /chat/i });
-    if (await chatLink.isVisible()) {
-      await chatLink.click();
-      await expect(page).toHaveURL(/\/chat/);
-    }
+    await expect(chatLink).toBeVisible();
+    await chatLink.click();
+    await expect(page).toHaveURL(/\/chat/);
 
     // Go to profile
     const profileLink = page.getByRole("link", { name: /profile/i });
-    if (await profileLink.isVisible()) {
-      await profileLink.click();
-      await expect(page).toHaveURL(/\/profile/);
+    await expect(profileLink).toBeVisible();
+    await profileLink.click();
+    await expect(page).toHaveURL(/\/profile/);
 
-      // Verify profile loaded
-      await expect(page.getByText(TEST_USER.email)).toBeVisible();
-    }
+    // Verify profile loaded
+    await expect(page.getByText(TEST_USER.email)).toBeVisible();
 
     // Back to protocols
     const protocolsLink = page.getByRole("link", { name: /protocols/i });
-    if (await protocolsLink.isVisible()) {
-      await protocolsLink.click();
-      await expect(page).toHaveURL(/\/protocols/);
-    }
+    await expect(protocolsLink).toBeVisible();
+    await protocolsLink.click();
+    await expect(page).toHaveURL(/\/protocols/);
   });
 });
 

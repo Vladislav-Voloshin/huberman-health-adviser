@@ -26,14 +26,12 @@ test.describe("Responsive: Mobile (375x667)", () => {
   test("auth card is not clipped on small screens", async ({ page }) => {
     await page.goto("/auth");
     const card = page.locator("[class*='card']").first();
-    if (await card.isVisible()) {
-      const box = await card.boundingBox();
-      if (box) {
-        // Card should not overflow the viewport
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(375 + 10); // small margin
-      }
-    }
+    await expect(card).toBeVisible();
+    const box = await card.boundingBox();
+    expect(box).not.toBeNull();
+    // Card should not overflow the viewport
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(375 + 10); // small margin
   });
 });
 
@@ -62,12 +60,10 @@ test.describe("Responsive: Desktop (1440x900)", () => {
   test("auth page renders centered on desktop", async ({ page }) => {
     await page.goto("/auth");
     const card = page.locator("[class*='card']").first();
-    if (await card.isVisible()) {
-      const box = await card.boundingBox();
-      if (box) {
-        // Card should be centered (not flush left)
-        expect(box.x).toBeGreaterThan(100);
-      }
-    }
+    await expect(card).toBeVisible();
+    const box = await card.boundingBox();
+    expect(box).not.toBeNull();
+    // Card should be centered (not flush left)
+    expect(box!.x).toBeGreaterThan(100);
   });
 });

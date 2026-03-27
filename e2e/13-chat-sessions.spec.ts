@@ -21,19 +21,15 @@ test.describe("Chat Session Management", () => {
     if (await newChatBtn.isVisible()) {
       await expect(newChatBtn).toBeVisible();
     } else {
-      // Try toggling sidebar on mobile
+      // Mobile layout: New Chat button may be behind hamburger menu
       const hamburger = page.locator("button").filter({
         has: page.locator("svg"),
       }).first();
-      if (await hamburger.isVisible()) {
-        await hamburger.click();
-        // Wait for sidebar overlay to appear
-        await page.getByRole("button", { name: /new chat/i }).waitFor({ timeout: 5000 }).catch(() => {});
-      }
-      // New Chat may now be visible in overlay
+      await expect(hamburger).toBeVisible();
+      await hamburger.click();
+      // Wait for sidebar overlay to appear with the New Chat button
       const btn = page.getByRole("button", { name: /new chat/i });
-      const visible = await btn.isVisible().catch(() => false);
-      expect(visible || true).toBeTruthy(); // graceful on mobile
+      await expect(btn).toBeVisible({ timeout: 5000 });
     }
   });
 

@@ -76,9 +76,8 @@ test.describe("Profile Navigation", () => {
 
     // Click profile in bottom nav (👤 icon or "Profile" text)
     const profileNav = page.getByRole("link", { name: /profile/i });
-    if (await profileNav.isVisible()) {
-      await profileNav.click();
-      await expect(page).toHaveURL(/\/profile/);
-    }
+    await expect(profileNav).toBeVisible();
+    await profileNav.click();
+    await expect(page).toHaveURL(/\/profile/);
   });
 });
