@@ -37,6 +37,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
   }, []);
 
   const loadSession = useCallback(async (sessionId: string) => {
+    abortRef.current?.abort();
     setLoadingSession(true);
     try {
       const res = await fetch(`/api/chat/sessions?session_id=${sessionId}`);
@@ -59,6 +60,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
   }, []);
 
   const startNewChat = useCallback(() => {
+    abortRef.current?.abort();
     setMessages([]);
     setActiveSession(null);
     setProtocolId(undefined);
