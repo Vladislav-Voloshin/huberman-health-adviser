@@ -168,7 +168,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
       setLoading(false);
       setStreamingId(null);
     }
-  }, [input, loading, activeSession, userId, protocolId, scrollToBottom]);
+  }, [input, loading, activeSession, protocolId, scrollToBottom]);
 
   return {
     messages,
