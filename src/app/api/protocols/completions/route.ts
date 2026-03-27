@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
+import { getRequestId } from "@/lib/api/request-id";
 
 /** Get today's date in the user's local timezone using tz_offset (minutes). */
 function getLocalToday(request: NextRequest): string {
@@ -11,6 +12,7 @@ function getLocalToday(request: NextRequest): string {
 }
 
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const { user, supabase } = await requireAuth();
 
@@ -41,11 +43,12 @@ export async function GET(request: NextRequest) {
       date: today,
     });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const { user, supabase } = await requireAuth();
 
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ status: "completed" });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }
 
