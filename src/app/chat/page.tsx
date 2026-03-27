@@ -3,13 +3,19 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ChatInterface } from "@/components/chat/chat-interface";
 
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ protocol?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth");
+
+  const params = await searchParams;
 
   const { data: sessions } = await supabase
     .from("chat_sessions")
@@ -19,7 +25,11 @@ export default async function ChatPage() {
 
   return (
     <AppShell>
-      <ChatInterface userId={user.id} sessions={sessions || []} />
+      <ChatInterface
+        userId={user.id}
+        sessions={sessions || []}
+        initialProtocolId={params.protocol}
+      />
     </AppShell>
   );
 }

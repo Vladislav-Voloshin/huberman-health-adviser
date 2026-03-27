@@ -6,13 +6,15 @@ import type { Message, ChatSession } from "./types";
 interface UseChatStreamOptions {
   userId: string;
   initialSessions: ChatSession[];
+  initialProtocolId?: string;
 }
 
-export function useChatStream({ userId, initialSessions }: UseChatStreamOptions) {
+export function useChatStream({ userId, initialSessions, initialProtocolId }: UseChatStreamOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [protocolId, setProtocolId] = useState<string | undefined>(initialProtocolId);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>(initialSessions);
   const [loadingSession, setLoadingSession] = useState(false);
@@ -49,6 +51,7 @@ export function useChatStream({ userId, initialSessions }: UseChatStreamOptions)
   function startNewChat() {
     setMessages([]);
     setActiveSession(null);
+    setProtocolId(undefined);
   }
 
   async function sendMessage() {
@@ -81,8 +84,14 @@ export function useChatStream({ userId, initialSessions }: UseChatStreamOptions)
           message: userMessage.content,
           session_id: activeSession,
           user_id: userId,
+          protocol_id: !activeSession ? protocolId : undefined,
         }),
       });
+
+      // Clear protocol context after first message creates the session
+      if (protocolId && !activeSession) {
+        setProtocolId(undefined);
+      }
 
       if (!res.ok || !res.body) throw new Error("Stream failed");
 
