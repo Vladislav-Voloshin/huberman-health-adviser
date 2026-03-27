@@ -1,9 +1,14 @@
 import { z } from 'zod';
 
-const serverSchema = z.object({
+/** Core Supabase env — required for every SSR page and API route. */
+const coreSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+});
+
+/** Full server env — only required by AI/ingestion routes. */
+const serverSchema = coreSchema.extend({
   ANTHROPIC_API_KEY: z.string().min(1),
   PINECONE_API_KEY: z.string().min(1),
   PINECONE_INDEX: z.string().default('craftwell'),
@@ -17,6 +22,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 });
 
+export type CoreEnv = z.infer<typeof coreSchema>;
 export type ServerEnv = z.infer<typeof serverSchema>;
 export type ClientEnv = z.infer<typeof clientSchema>;
 
@@ -31,9 +37,19 @@ function validateEnv<T>(schema: z.ZodType<T>, data: Record<string, unknown>, lab
   return result.data;
 }
 
+let _coreEnv: CoreEnv | undefined;
 let _serverEnv: ServerEnv | undefined;
 let _clientEnv: ClientEnv | undefined;
 
+/** Validates only Supabase keys — safe to call from any SSR page. */
+export function coreEnv(): CoreEnv {
+  if (!_coreEnv) {
+    _coreEnv = validateEnv(coreSchema, process.env, 'core');
+  }
+  return _coreEnv;
+}
+
+/** Validates all AI/ingestion secrets — only call from AI or ingest routes. */
 export function serverEnv(): ServerEnv {
   if (!_serverEnv) {
     _serverEnv = validateEnv(serverSchema, process.env, 'server');
