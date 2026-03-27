@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     // Sanitize for PostgREST .or() — escape characters that break filter syntax
     const q = query.trim().replace(/[%_\\(),."']/g, "");
 
+    if (q.length < 2) {
+      return apiError("Query must contain at least 2 searchable characters", 400);
+    }
+
     // Run both searches in parallel
     const [protocolResults, knowledgeResults] = await Promise.all([
       // 1. Protocol text search via Supabase
