@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProfileView } from "@/components/profile/profile-view";
+
+export const metadata: Metadata = {
+  title: "Profile — Craftwell",
+  description: "View and manage your health profile, active protocols, and progress streaks.",
+};
 
 export default async function ProfilePage() {
   const supabase = await createClient();

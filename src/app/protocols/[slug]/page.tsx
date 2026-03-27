@@ -1,7 +1,29 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProtocolDetail } from "@/components/protocols/protocol-detail";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: protocol } = await supabase
+    .from("protocols")
+    .select("title, description")
+    .eq("slug", slug)
+    .single();
+
+  if (!protocol) return { title: "Protocol Not Found — Craftwell" };
+
+  return {
+    title: `${protocol.title} — Craftwell`,
+    description: protocol.description,
+  };
+}
 
 export default async function ProtocolDetailPage({
   params,

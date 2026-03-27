@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProtocolList } from "@/components/protocols/protocol-list";
+
+export const metadata: Metadata = {
+  title: "Protocols — Craftwell",
+  description: "Browse science-based health protocols ranked by effectiveness. Sleep, focus, exercise, stress, and more.",
+};
 
 // Maps survey focus_areas values → protocol category slugs
 const focusAreaToCategory: Record<string, string> = {
