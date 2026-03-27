@@ -10,8 +10,8 @@ const MAX_HISTORY_TURNS = 20;
 
 const chatSchema = z.object({
   message: z.string().min(1, "Message is required").max(MAX_MESSAGE_LENGTH),
-  session_id: z.string().uuid().optional(),
-  protocol_id: z.string().uuid().optional(),
+  session_id: z.string().uuid().nullish().transform((v) => v ?? undefined),
+  protocol_id: z.string().uuid().nullish().transform((v) => v ?? undefined),
 });
 
 export async function POST(request: NextRequest) {

@@ -4,17 +4,17 @@ import { z } from "zod";
 
 const profileUpdateSchema = z.object({
   profile: z.object({
-    display_name: z.string().max(100).optional(),
-    first_name: z.string().max(50).optional(),
-    last_name: z.string().max(50).optional(),
-    age: z.number().int().min(1).max(150).optional(),
+    display_name: z.string().max(100).nullish(),
+    first_name: z.string().max(50).nullish(),
+    last_name: z.string().max(50).nullish(),
+    age: z.number().int().min(1).max(150).nullish(),
   }).optional(),
   survey: z.object({
     health_goals: z.array(z.string()).optional(),
     sleep_quality: z.number().int().min(1).max(10).optional(),
     exercise_frequency: z.string().optional(),
     stress_level: z.number().int().min(1).max(10).optional(),
-    supplement_experience: z.string().optional(),
+    supplement_experience: z.string().nullish(),
     focus_areas: z.array(z.string()).optional(),
   }).optional(),
 });
