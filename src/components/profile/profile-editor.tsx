@@ -5,25 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { ProfileData, SurveyData } from "./profile-view";
-
-const HEALTH_GOALS = [
-  "Better Sleep", "More Energy", "Reduce Stress", "Build Muscle",
-  "Lose Weight", "Improve Focus", "Better Mood", "Longevity",
-];
-
-const EXERCISE_OPTIONS = ["Never", "1-2x per week", "3-4x per week", "5+ per week"];
-
-const SUPPLEMENT_OPTIONS = [
-  "Never taken supplements", "Tried a few",
-  "Regular supplement user", "Advanced biohacker",
-];
-
-const FOCUS_AREAS = [
-  "Sleep", "Focus & Productivity", "Exercise & Recovery",
-  "Stress & Anxiety", "Nutrition", "Hormones",
-  "Cold/Heat Exposure", "Light Optimization",
-  "Motivation & Dopamine", "Mental Health",
-];
+import { toggleItem } from "@/lib/utils";
+import { HEALTH_GOALS, EXERCISE_OPTIONS, SUPPLEMENT_OPTIONS, FOCUS_AREAS } from "@/lib/survey-constants";
 
 interface ProfileEditorProps {
   profile: ProfileData | null;
@@ -48,9 +31,6 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
   const [supplementExperience, setSupplementExperience] = useState(survey?.supplement_experience || "");
   const [focusAreas, setFocusAreas] = useState<string[]>(survey?.focus_areas || []);
 
-  function toggleItem(list: string[], item: string, setter: (v: string[]) => void) {
-    setter(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -147,7 +127,7 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
             {HEALTH_GOALS.map((goal) => (
               <button
                 key={goal}
-                onClick={() => toggleItem(healthGoals, goal, setHealthGoals)}
+                onClick={() => setHealthGoals(toggleItem(healthGoals, goal))}
                 className={`p-3 rounded-lg border text-sm text-left transition-colors ${
                   healthGoals.includes(goal)
                     ? "border-primary bg-primary/10 text-primary"
@@ -258,7 +238,7 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
             {FOCUS_AREAS.map((area) => (
               <button
                 key={area}
-                onClick={() => toggleItem(focusAreas, area, setFocusAreas)}
+                onClick={() => setFocusAreas(toggleItem(focusAreas, area))}
                 className={`p-3 rounded-lg border text-sm text-left transition-colors ${
                   focusAreas.includes(area)
                     ? "border-primary bg-primary/10 text-primary"

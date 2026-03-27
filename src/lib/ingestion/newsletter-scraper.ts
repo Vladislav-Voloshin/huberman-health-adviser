@@ -5,14 +5,7 @@
  * Newsletters contain concise protocol summaries and tool recommendations.
  */
 
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase, cleanHtml, extractTopics } from "./shared";
 
 interface NewsletterData {
   title: string;
@@ -63,10 +56,10 @@ export async function fetchNewsletterList(): Promise<NewsletterData[]> {
 
         // Extract main content (strip HTML tags)
         const content = extractMainContent(pageHtml);
-        const topics = extractTopicsFromContent(title, content);
+        const topics = extractTopics(title, content);
 
         newsletters.push({
-          title: cleanHtmlEntities(title),
+          title: cleanHtml(title),
           publish_date: publishDate,
           content: content.slice(0, 10000),
           topics,
@@ -181,30 +174,8 @@ function extractMainContent(html: string): string {
   // Normalize whitespace
   content = content.replace(/\s+/g, " ").trim();
   // Decode HTML entities
-  content = cleanHtmlEntities(content);
+  content = cleanHtml(content);
 
   return content;
 }
 
-function cleanHtmlEntities(text: string): string {
-  return text
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, " ");
-}
-
-function extractTopicsFromContent(title: string, content: string): string[] {
-  const topicKeywords = [
-    "sleep", "focus", "exercise", "stress", "anxiety", "dopamine",
-    "motivation", "cold exposure", "heat", "sauna", "light", "circadian",
-    "nutrition", "fasting", "supplement", "hormone", "caffeine",
-    "meditation", "breathwork", "recovery", "brain", "memory",
-    "gut health", "immune", "aging", "mental health", "depression",
-  ];
-
-  const combined = `${title} ${content}`.toLowerCase();
-  return topicKeywords.filter((keyword) => combined.includes(keyword));
-}

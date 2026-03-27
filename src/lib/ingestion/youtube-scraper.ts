@@ -6,14 +6,7 @@
  * content chunks for the RAG pipeline.
  */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
-function getSupabase(): SupabaseClient {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase } from "./shared";
 
 function getYouTubeApiKey(): string {
   const key = process.env.YOUTUBE_API_KEY;

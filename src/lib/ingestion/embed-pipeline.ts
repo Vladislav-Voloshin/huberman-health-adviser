@@ -5,16 +5,9 @@
  * and upserts them into Pinecone for RAG retrieval.
  */
 
-import { createClient } from "@supabase/supabase-js";
 import { getEmbeddings } from "@/lib/pinecone/embeddings";
 import { upsertVectors, type VectorMetadata } from "@/lib/pinecone/client";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase } from "./shared";
 
 /**
  * Process un-embedded chunks: generate embeddings and store in Pinecone

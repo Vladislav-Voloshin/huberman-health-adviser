@@ -1,11 +1,6 @@
 "use client";
 
-const FOCUS_AREAS = [
-  "Sleep", "Focus & Productivity", "Exercise & Recovery",
-  "Stress & Anxiety", "Nutrition", "Hormones",
-  "Cold/Heat Exposure", "Light Optimization",
-  "Motivation & Dopamine", "Mental Health",
-];
+import { FOCUS_AREAS } from "@/lib/survey-constants";
 
 interface StepFocusAreasProps {
   selectedAreas: string[];

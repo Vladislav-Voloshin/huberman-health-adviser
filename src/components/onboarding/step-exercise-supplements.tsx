@@ -1,11 +1,6 @@
 "use client";
 
-const EXERCISE_OPTIONS = ["Never", "1-2x per week", "3-4x per week", "5+ per week"];
-
-const SUPPLEMENT_OPTIONS = [
-  "Never taken supplements", "Tried a few",
-  "Regular supplement user", "Advanced biohacker",
-];
+import { EXERCISE_OPTIONS, SUPPLEMENT_OPTIONS } from "@/lib/survey-constants";
 
 interface StepExerciseSupplementsProps {
   exerciseFrequency: string;

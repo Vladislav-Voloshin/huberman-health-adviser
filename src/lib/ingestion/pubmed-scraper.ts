@@ -6,14 +6,7 @@
  * Stores abstracts in Supabase for chunking and embedding.
  */
 
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase, cleanHtml } from "./shared";
 
 interface PubMedArticle {
   pmid: string;
@@ -191,16 +184,6 @@ function extractAbstract(xml: string): string {
     : abstractXml.replace(/<[^>]*>/g, "").trim();
 }
 
-function cleanHtml(text: string): string {
-  return text
-    .replace(/<[^>]*>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .trim();
-}
 
 /**
  * Store articles in the content_chunks table (ready for embedding)

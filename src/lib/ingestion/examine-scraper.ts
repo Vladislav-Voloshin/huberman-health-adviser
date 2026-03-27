@@ -6,14 +6,7 @@
  * Stores structured supplement data for RAG retrieval.
  */
 
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin as getSupabase, cleanHtml } from "./shared";
 
 interface SupplementData {
   name: string;
@@ -181,20 +174,6 @@ function extractBenefits(
   return benefits;
 }
 
-function cleanHtml(text: string): string {
-  return text
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 /**
  * Store supplement data as content chunks for embedding
