@@ -1,11 +1,18 @@
 import { NextRequest } from "next/server";
-import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
+import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
 import { queryVectors } from "@/lib/pinecone/client";
 import { getEmbedding, getAnthropicClient } from "@/lib/pinecone/embeddings";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { z } from "zod";
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_HISTORY_TURNS = 20;
+
+const chatSchema = z.object({
+  message: z.string().min(1, "Message is required").max(MAX_MESSAGE_LENGTH),
+  session_id: z.string().uuid().nullish().transform((v) => v ?? undefined),
+  protocol_id: z.string().uuid().nullish().transform((v) => v ?? undefined),
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,19 +21,14 @@ export async function POST(request: NextRequest) {
     const rateLimited = await checkRateLimit(user.id, supabase);
     if (rateLimited) return rateLimited;
 
-    const { message, session_id, protocol_id } = await request.json();
+    const body = await parseBody(request, chatSchema);
+    if (body instanceof Response) return body;
 
-    // Input validation
-    if (typeof message !== "string" || !message.trim()) {
-      return apiError("Message is required", 400);
-    }
-    if (message.length > MAX_MESSAGE_LENGTH) {
-      return apiError(`Message must be under ${MAX_MESSAGE_LENGTH} characters`, 400);
-    }
-    const trimmedMessage = message.trim();
+    const trimmedMessage = body.message.trim();
+    const { session_id, protocol_id } = body;
 
     // Create or get session
-    let currentSessionId = session_id;
+    let currentSessionId: string | undefined = session_id;
     if (!currentSessionId) {
       const { data: session, error: sessionErr } = await supabase
         .from("chat_sessions")
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch conversation history for multi-turn context
-    const history = await fetchConversationHistory(supabase, currentSessionId);
+    const history = await fetchConversationHistory(supabase, currentSessionId!);
 
     // Get relevant context via RAG
     const { contextText, sources } = await fetchRAGContext(trimmedMessage);

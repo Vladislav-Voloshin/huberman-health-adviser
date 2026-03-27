@@ -1,5 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
+import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
+import { z } from "zod";
+
+const profileUpdateSchema = z.object({
+  profile: z.object({
+    display_name: z.string().max(100).nullish(),
+    first_name: z.string().max(50).nullish(),
+    last_name: z.string().max(50).nullish(),
+    age: z.number().int().min(1).max(150).nullish(),
+  }).optional(),
+  survey: z.object({
+    health_goals: z.array(z.string()).optional(),
+    sleep_quality: z.number().int().min(1).max(10).optional(),
+    exercise_frequency: z.string().optional(),
+    stress_level: z.number().int().min(1).max(10).optional(),
+    supplement_experience: z.string().nullish(),
+    focus_areas: z.array(z.string()).optional(),
+  }).optional(),
+});
 
 export async function GET() {
   try {
@@ -20,66 +38,44 @@ export async function PUT(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
-    const body = await request.json();
+    const body = await parseBody(request, profileUpdateSchema);
+    if (body instanceof Response) return body;
+
     const { profile: profileData, survey: surveyData } = body;
 
     const results: { profile?: string; survey?: string } = {};
 
-    // Update users table (display_name, first_name, last_name, age)
-    if (profileData) {
-      const allowedFields = ["display_name", "first_name", "last_name", "age"];
-      const updateData: Record<string, unknown> = {};
-      for (const field of allowedFields) {
-        if (field in profileData) {
-          updateData[field] = profileData[field];
-        }
-      }
+    // Update users table — Zod already strips unknown fields
+    if (profileData && Object.keys(profileData).length > 0) {
+      const { error } = await supabase
+        .from("users")
+        .update(profileData)
+        .eq("id", user.id);
 
-      if (Object.keys(updateData).length > 0) {
-        const { error } = await supabase
-          .from("users")
-          .update(updateData)
-          .eq("id", user.id);
+      if (error) {
+        // If columns don't exist yet, try without the new columns
+        if (error.message.includes("does not exist") && profileData.display_name !== undefined) {
+          const { error: fallbackErr } = await supabase
+            .from("users")
+            .update({ display_name: profileData.display_name })
+            .eq("id", user.id);
 
-        if (error) {
-          // If columns don't exist yet, try without the new columns
-          if (error.message.includes("does not exist")) {
-            const fallbackData: Record<string, unknown> = {};
-            if ("display_name" in updateData) fallbackData.display_name = updateData.display_name;
-
-            const { error: fallbackErr } = await supabase
-              .from("users")
-              .update(fallbackData)
-              .eq("id", user.id);
-
-            results.profile = fallbackErr
-              ? fallbackErr.message
-              : "updated (some fields pending migration)";
-          } else {
-            return apiError(error.message, 500);
-          }
+          results.profile = fallbackErr
+            ? fallbackErr.message
+            : "updated (some fields pending migration)";
         } else {
-          results.profile = "updated";
+          return apiError(error.message, 500);
         }
+      } else {
+        results.profile = "updated";
       }
     }
 
-    // Update survey_responses
-    if (surveyData) {
-      const allowedSurveyFields = [
-        "health_goals", "sleep_quality", "exercise_frequency",
-        "stress_level", "supplement_experience", "focus_areas",
-      ];
-      const updateData: Record<string, unknown> = { user_id: user.id };
-      for (const field of allowedSurveyFields) {
-        if (field in surveyData) {
-          updateData[field] = surveyData[field];
-        }
-      }
-
+    // Update survey_responses — Zod already strips unknown fields
+    if (surveyData && Object.keys(surveyData).length > 0) {
       const { error } = await supabase
         .from("survey_responses")
-        .upsert(updateData, { onConflict: "user_id" });
+        .upsert({ user_id: user.id, ...surveyData }, { onConflict: "user_id" });
 
       if (error) {
         return apiError(error.message, 500);
