@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { Message, ChatSession } from "./types";
 
 interface UseChatStreamOptions {
@@ -19,6 +19,14 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
   const [sessions, setSessions] = useState<ChatSession[]>(initialSessions);
   const [loadingSession, setLoadingSession] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight stream on unmount (navigation away)
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -79,6 +87,11 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
     ]);
 
     try {
+      // Abort any previous in-flight stream before starting a new one
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,6 +100,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
           session_id: activeSession,
           protocol_id: !activeSession ? protocolId : undefined,
         }),
+        signal: controller.signal,
       });
 
       // Clear protocol context after first message creates the session
@@ -156,6 +170,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
         }
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       console.error("[Chat] Stream error:", err);
       setMessages((prev) =>
         prev.map((m) =>
@@ -165,6 +180,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
         )
       );
     } finally {
+      abortRef.current = null;
       setLoading(false);
       setStreamingId(null);
     }
