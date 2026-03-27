@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
-    const rateLimited = checkRateLimit(user.id);
+    const rateLimited = await checkRateLimit(user.id, supabase);
     if (rateLimited) return rateLimited;
 
     const { message, session_id, protocol_id } = await request.json();
