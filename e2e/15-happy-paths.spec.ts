@@ -203,7 +203,8 @@ test.describe("P0 Happy Path: Search and Filter Protocols", () => {
     await cards.first().click();
     await page.waitForURL(/\/protocols\/.+/);
 
-    // Protocol detail should load
+    // Wait for protocol detail to render, then check content
+    await page.waitForSelector("h1", { timeout: 15000 });
     const content = await page.innerText("body");
     expect(content?.length).toBeGreaterThan(100);
   });

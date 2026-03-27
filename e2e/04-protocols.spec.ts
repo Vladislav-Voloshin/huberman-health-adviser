@@ -122,7 +122,8 @@ test.describe("Protocol Detail", () => {
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
-    // Should show protocol content
+    // Wait for protocol detail content to load (h1 title)
+    await page.waitForSelector("h1", { timeout: 15000 });
     const content = await page.innerText("body");
     expect(content?.length).toBeGreaterThan(100);
   });
@@ -156,7 +157,8 @@ test.describe("Protocol Detail", () => {
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
-    // Should display ranked tools
+    // Wait for detail page to render
+    await page.waitForSelector("h1", { timeout: 15000 });
     const content = await page.innerText("body");
     // Tools should have numbered ranks or descriptions
     expect(
