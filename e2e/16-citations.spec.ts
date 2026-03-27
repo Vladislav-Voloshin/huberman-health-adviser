@@ -125,13 +125,15 @@ test.describe("Citation Display", () => {
     await input.fill("How do I improve focus?");
     await page.getByRole("button", { name: /send/i }).click();
 
-    // User message bubble should appear
-    const userBubble = page
-      .locator('[class*="bg-primary"]')
-      .filter({ hasText: "How do I improve focus?" });
-    await expect(userBubble).toBeVisible();
+    const messagesArea = page.locator(".max-w-3xl.mx-auto");
 
-    // User bubble must not contain a "Sources:" section
-    await expect(userBubble.getByText("Sources:")).toHaveCount(0);
+    // User messages are wrapped in a right-aligned flex container
+    const userMessage = messagesArea
+      .locator(".flex.justify-end")
+      .filter({ hasText: "How do I improve focus?" });
+    await expect(userMessage).toBeVisible({ timeout: 5000 });
+
+    // User message must not contain a "Sources:" section
+    await expect(userMessage.getByText("Sources:")).toHaveCount(0);
   });
 });
