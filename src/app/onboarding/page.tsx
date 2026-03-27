@@ -17,6 +17,7 @@ export default function OnboardingPage() {
   const supabase = createClient();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [sleepQuality, setSleepQuality] = useState(5);
@@ -31,9 +32,10 @@ export default function OnboardingPage() {
 
   async function handleComplete() {
     setLoading(true);
+    setError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+      if (!user) { setError("Please sign in to continue."); setLoading(false); return; }
 
       const { error: surveyError } = await supabase.from("survey_responses").upsert({
         user_id: user.id,
@@ -45,7 +47,12 @@ export default function OnboardingPage() {
         focus_areas: selectedFocusAreas,
       }, { onConflict: "user_id" });
 
-      if (surveyError) { console.error("Survey save error:", surveyError); setLoading(false); return; }
+      if (surveyError) {
+        console.error("Survey save error:", surveyError);
+        setError("Failed to save your preferences. Please try again.");
+        setLoading(false);
+        return;
+      }
 
       const { error: userError } = await supabase.from("users").upsert({
         id: user.id,
@@ -53,11 +60,17 @@ export default function OnboardingPage() {
         onboarding_completed: true,
       }, { onConflict: "id" });
 
-      if (userError) { console.error("User update error:", userError); setLoading(false); return; }
+      if (userError) {
+        console.error("User update error:", userError);
+        setError("Failed to complete setup. Please try again.");
+        setLoading(false);
+        return;
+      }
 
       router.push("/protocols");
     } catch (err) {
       console.error("Onboarding error:", err);
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   }
@@ -109,6 +122,9 @@ export default function OnboardingPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {steps[step]}
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
           <div className="flex gap-3">
             {step > 0 && (
               <Button variant="outline" onClick={() => setStep((s) => s - 1)} className="flex-1">
