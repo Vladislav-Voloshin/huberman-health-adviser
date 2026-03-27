@@ -44,10 +44,9 @@ test.describe("App Shell & Navigation", () => {
     await page.waitForLoadState("domcontentloaded");
 
     const chatLink = page.getByRole("link", { name: /chat/i });
-    if (await chatLink.isVisible()) {
-      await chatLink.click();
-      await expect(page).toHaveURL(/\/chat/);
-    }
+    await expect(chatLink).toBeVisible();
+    await chatLink.click();
+    await expect(page).toHaveURL(/\/chat/);
   });
 
   test("navigate from Chat to Profile via bottom nav", async ({ page }) => {
@@ -55,10 +54,9 @@ test.describe("App Shell & Navigation", () => {
     await page.waitForLoadState("domcontentloaded");
 
     const profileLink = page.getByRole("link", { name: /profile/i });
-    if (await profileLink.isVisible()) {
-      await profileLink.click();
-      await expect(page).toHaveURL(/\/profile/);
-    }
+    await expect(profileLink).toBeVisible();
+    await profileLink.click();
+    await expect(page).toHaveURL(/\/profile/);
   });
 
   test("navigate from Profile back to Protocols via bottom nav", async ({
@@ -68,10 +66,9 @@ test.describe("App Shell & Navigation", () => {
     await page.waitForLoadState("domcontentloaded");
 
     const protocolsLink = page.getByRole("link", { name: /protocols/i });
-    if (await protocolsLink.isVisible()) {
-      await protocolsLink.click();
-      await expect(page).toHaveURL(/\/protocols/);
-    }
+    await expect(protocolsLink).toBeVisible();
+    await protocolsLink.click();
+    await expect(page).toHaveURL(/\/protocols/);
   });
 
   test("Craftwell logo links to protocols", async ({ page }) => {
@@ -79,9 +76,8 @@ test.describe("App Shell & Navigation", () => {
     await page.waitForLoadState("domcontentloaded");
 
     const logo = page.getByRole("link").filter({ hasText: "Craftwell" });
-    if (await logo.isVisible()) {
-      await logo.click();
-      await expect(page).toHaveURL(/\/protocols/);
-    }
+    await expect(logo).toBeVisible();
+    await logo.click();
+    await expect(page).toHaveURL(/\/protocols/);
   });
 });

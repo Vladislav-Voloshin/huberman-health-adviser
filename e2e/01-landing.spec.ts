@@ -32,11 +32,10 @@ test.describe("Landing Page", () => {
     await page.goto("/");
 
     const link = page.getByRole("link", { name: /browse protocols|protocols/i });
-    if (await link.isVisible()) {
-      await link.click();
-      // May redirect to auth if not logged in
-      await page.waitForURL(/(\/protocols|\/auth)/);
-    }
+    await expect(link).toBeVisible();
+    await link.click();
+    // May redirect to auth if not logged in
+    await page.waitForURL(/(\/protocols|\/auth)/);
   });
 
   test("shows category preview section", async ({ page }) => {

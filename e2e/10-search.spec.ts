@@ -75,26 +75,25 @@ test.describe("Protocol Search", () => {
   test("search combined with category filter works", async ({ page }) => {
     // Click a category filter first
     const sleepButton = page.getByRole("button", { name: /sleep/i });
-    if (await sleepButton.isVisible()) {
-      await sleepButton.click();
-      // Wait for category filter to apply
-      await page.waitForFunction(
-        () => document.querySelectorAll("a[href^='/protocols/']").length > 0
-      );
+    await expect(sleepButton).toBeVisible();
+    await sleepButton.click();
+    // Wait for category filter to apply
+    await page.waitForFunction(
+      () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+    );
 
-      const categoryCards = await page.locator("a[href^='/protocols/']").count();
+    const categoryCards = await page.locator("a[href^='/protocols/']").count();
 
-      // Now also search
-      const searchInput = page.getByPlaceholder("Search protocols...");
-      await searchInput.fill("morning");
-      // Wait for debounce to apply combined filter
-      await page.waitForFunction(
-        (max) => document.querySelectorAll("a[href^='/protocols/']").length <= max,
-        categoryCards
-      );
+    // Now also search
+    const searchInput = page.getByPlaceholder("Search protocols...");
+    await searchInput.fill("morning");
+    // Wait for debounce to apply combined filter
+    await page.waitForFunction(
+      (max) => document.querySelectorAll("a[href^='/protocols/']").length <= max,
+      categoryCards
+    );
 
-      const combinedCards = await page.locator("a[href^='/protocols/']").count();
-      expect(combinedCards).toBeLessThanOrEqual(categoryCards);
-    }
+    const combinedCards = await page.locator("a[href^='/protocols/']").count();
+    expect(combinedCards).toBeLessThanOrEqual(categoryCards);
   });
 });

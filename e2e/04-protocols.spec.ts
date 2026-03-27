@@ -77,18 +77,17 @@ test.describe("Protocol Listing", () => {
 
     // Click a specific category filter (Sleep)
     const sleepButton = page.getByRole("button", { name: /sleep/i });
-    if (await sleepButton.isVisible()) {
-      await sleepButton.click();
+    await expect(sleepButton).toBeVisible();
+    await sleepButton.click();
 
-      // Wait for filtered results to render
-      await expect(page.locator("a[href^='/protocols/']").first()).toBeVisible();
+    // Wait for filtered results to render
+    await expect(page.locator("a[href^='/protocols/']").first()).toBeVisible();
 
-      // Should show fewer or equal protocols
-      const filteredCards = await page
-        .locator("a[href^='/protocols/']")
-        .count();
-      expect(filteredCards).toBeLessThanOrEqual(allCards);
-    }
+    // Should show fewer or equal protocols
+    const filteredCards = await page
+      .locator("a[href^='/protocols/']")
+      .count();
+    expect(filteredCards).toBeLessThanOrEqual(allCards);
   });
 
   test("clicking protocol card navigates to detail page", async ({ page }) => {
@@ -139,13 +138,9 @@ test.describe("Protocol Detail", () => {
 
     // Should have a back link — could be text or arrow icon
     const backLink = page.locator("a[href='/protocols']").first();
-    if (await backLink.isVisible()) {
-      await backLink.click();
-      await page.waitForURL("**/protocols", { timeout: 10000 });
-    } else {
-      // Page may not have explicit back link, just verify we're on detail page
-      await expect(page).toHaveURL(/\/protocols\/.+/);
-    }
+    await expect(backLink).toBeVisible();
+    await backLink.click();
+    await page.waitForURL("**/protocols", { timeout: 10000 });
   });
 
   test("shows protocol tools/steps", async ({ page }) => {
@@ -223,20 +218,8 @@ test.describe("Protocol Detail", () => {
 
     // Should have a chat/ask CTA — check for link or button
     const chatLink = page.locator("a[href*='/chat']").first();
-    const chatVisible = await chatLink.isVisible().catch(() => false);
-
-    if (chatVisible) {
-      const href = await chatLink.getAttribute("href");
-      expect(href).toContain("/chat");
-    } else {
-      // Chat CTA might be text-based
-      const content = await page.innerText("body");
-      expect(
-        content?.includes("questions") ||
-          content?.includes("chat") ||
-          content?.includes("Ask") ||
-          true // protocol detail page exists, CTA is optional
-      ).toBeTruthy();
-    }
+    await expect(chatLink).toBeVisible();
+    const href = await chatLink.getAttribute("href");
+    expect(href).toContain("/chat");
   });
 });
