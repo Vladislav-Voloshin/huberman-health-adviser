@@ -151,7 +151,7 @@ test.describe("Protocol Detail", () => {
         content?.includes("Instructions") ||
         content?.includes("#1") ||
         content?.includes("Step") ||
-        content?.length! > 200
+        (content?.length ?? 0) > 200
     ).toBeTruthy();
   });
 
