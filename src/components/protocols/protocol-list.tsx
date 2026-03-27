@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -209,14 +208,6 @@ export function ProtocolList({
                               </div>
                             </div>
                           </div>
-                          {selectedCategory && (
-                            <Badge
-                              variant={protocol.effectiveness_rank <= 3 ? "default" : "secondary"}
-                              className="shrink-0 text-xs"
-                            >
-                              #{protocol.effectiveness_rank}
-                            </Badge>
-                          )}
                         </div>
                         <CardDescription className="text-xs line-clamp-2 mt-1">
                           {protocol.description}

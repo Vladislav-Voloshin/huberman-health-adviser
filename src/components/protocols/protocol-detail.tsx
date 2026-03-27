@@ -151,7 +151,6 @@ export function ProtocolDetail({
         <h1 className="text-2xl font-bold">{protocol.title}</h1>
         <p className="text-muted-foreground">{protocol.description}</p>
         <div className="flex gap-2 flex-wrap items-center">
-          <Badge>Rank #{protocol.effectiveness_rank}</Badge>
           <Badge variant="outline">{protocol.difficulty}</Badge>
           {protocol.time_commitment && (
             <Badge variant="outline">{protocol.time_commitment}</Badge>
