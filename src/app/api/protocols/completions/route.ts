@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       .eq("protocol_id", protocol_id)
       .eq("tool_id", tool_id)
       .eq("completed_date", today)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       // Uncomplete (toggle off)

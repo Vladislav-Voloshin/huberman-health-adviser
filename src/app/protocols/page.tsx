@@ -44,7 +44,7 @@ export default async function ProtocolsPage() {
       .from("survey_responses")
       .select("focus_areas, health_goals")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (survey) {
       // Primary: direct focus area → category mapping

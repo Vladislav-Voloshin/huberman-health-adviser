@@ -21,7 +21,7 @@ export default async function ProfilePage() {
     .from("survey_responses")
     .select("*")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
   const { data: userProtocols } = await supabase
     .from("user_protocols")

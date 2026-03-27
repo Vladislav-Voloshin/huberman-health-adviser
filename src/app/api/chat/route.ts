@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     // Create or get session
     let currentSessionId = session_id;
     if (!currentSessionId) {
-      const { data: session } = await supabase
+      const { data: session, error: sessionErr } = await supabase
         .from("chat_sessions")
         .insert({
           user_id: user.id,
@@ -21,7 +21,14 @@ export async function POST(request: NextRequest) {
         })
         .select("id")
         .single();
-      currentSessionId = session?.id;
+
+      if (sessionErr || !session) {
+        return new Response(JSON.stringify({ error: "Failed to create chat session" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      currentSessionId = session.id;
     }
 
     // Save user message

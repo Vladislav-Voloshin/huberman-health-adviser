@@ -7,7 +7,7 @@ export async function GET() {
 
     const [{ data: profile }, { data: survey }] = await Promise.all([
       supabase.from("users").select("*").eq("id", user.id).single(),
-      supabase.from("survey_responses").select("*").eq("user_id", user.id).single(),
+      supabase.from("survey_responses").select("*").eq("user_id", user.id).maybeSingle(),
     ]);
 
     return NextResponse.json({ profile, survey });
