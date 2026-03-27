@@ -18,10 +18,10 @@ jobs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
 
     steps:
-      - name: Checkout PR merge commit
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
       - name: Pre-fetch base and head refs
