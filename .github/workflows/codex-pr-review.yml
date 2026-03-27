@@ -43,7 +43,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          cp .github/codex/pr-review-prompt.md "$RUNNER_TEMP/codex-pr-review-prompt.md"
+          git show "origin/$PR_BASE_REF:.github/codex/pr-review-prompt.md" > "$RUNNER_TEMP/codex-pr-review-prompt.md"
           {
             printf -- "\n\nPR context\n"
             printf -- "- Repository: %s\n" "$GITHUB_REPOSITORY"
