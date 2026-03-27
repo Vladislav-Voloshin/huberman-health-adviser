@@ -10,25 +10,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-
-interface Category {
-  slug: string;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-interface Protocol {
-  id: string;
-  title: string;
-  slug: string;
-  category: string;
-  description: string;
-  effectiveness_rank: number;
-  difficulty: string;
-  time_commitment: string;
-  tags: string[];
-}
+import type { Protocol, ProtocolCategory } from "@/types/database";
 
 const categoryMeta: Record<string, { icon: string; accent: string; bg: string }> = {
   sleep: { icon: "🌙", accent: "text-indigo-500", bg: "bg-indigo-500/10" },
@@ -70,7 +52,7 @@ export function ProtocolList({
   categories,
   protocols,
 }: {
-  categories: Category[];
+  categories: ProtocolCategory[];
   protocols: Protocol[];
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);

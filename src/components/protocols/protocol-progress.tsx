@@ -1,12 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-
-interface StreakData {
-  streak: number;
-  longest_streak: number;
-  total_days: number;
-}
+import type { StreakData } from "@/types/database";
 
 interface ProtocolProgressProps {
   completedCount: number;
