@@ -1,13 +1,25 @@
 import { NextRequest } from "next/server";
-import { requireAuth, handleApiError } from "@/lib/api/helpers";
+import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
 import { queryVectors } from "@/lib/pinecone/client";
 import { getEmbedding, getAnthropicClient } from "@/lib/pinecone/embeddings";
+
+const MAX_MESSAGE_LENGTH = 4000;
+const MAX_HISTORY_TURNS = 20;
 
 export async function POST(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
     const { message, session_id, protocol_id } = await request.json();
+
+    // Input validation
+    if (typeof message !== "string" || !message.trim()) {
+      return apiError("Message is required", 400);
+    }
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return apiError(`Message must be under ${MAX_MESSAGE_LENGTH} characters`, 400);
+    }
+    const trimmedMessage = message.trim();
 
     // Create or get session
     let currentSessionId = session_id;
@@ -16,30 +28,33 @@ export async function POST(request: NextRequest) {
         .from("chat_sessions")
         .insert({
           user_id: user.id,
-          title: message.slice(0, 50),
+          title: trimmedMessage.slice(0, 50),
           protocol_id: protocol_id || null,
         })
         .select("id")
         .single();
 
       if (sessionErr || !session) {
-        return new Response(JSON.stringify({ error: "Failed to create chat session" }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
+        return apiError("Failed to create chat session", 500);
       }
       currentSessionId = session.id;
     }
 
     // Save user message
-    await supabase.from("chat_messages").insert({
+    const { error: insertErr } = await supabase.from("chat_messages").insert({
       session_id: currentSessionId,
       role: "user",
-      content: message,
+      content: trimmedMessage,
     });
+    if (insertErr) {
+      console.error("[Chat] Failed to save user message:", insertErr.message);
+    }
+
+    // Fetch conversation history for multi-turn context
+    const history = await fetchConversationHistory(supabase, currentSessionId);
 
     // Get relevant context via RAG
-    const { contextText, sources } = await fetchRAGContext(message);
+    const { contextText, sources } = await fetchRAGContext(trimmedMessage);
 
     // Build system prompt
     let systemPrompt = buildSystemPrompt(contextText);
@@ -56,27 +71,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Build messages array with history + current message
+    const messages: { role: "user" | "assistant"; content: string }[] = [
+      ...history,
+      { role: "user", content: trimmedMessage },
+    ];
+
     // Stream response using SSE
     const anthropic = getAnthropicClient();
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`
-          )
-        );
-
         let fullContent = "";
+        let streamFailed = false;
 
         try {
           const response = anthropic.messages.stream({
             model: "claude-sonnet-4-20250514",
             max_tokens: 1024,
             system: systemPrompt,
-            messages: [{ role: "user", content: message }],
+            messages,
           });
+
+          // Send meta (session_id + sources) only after stream starts successfully
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`
+            )
+          );
 
           for await (const event of response) {
             if (
@@ -93,6 +116,7 @@ export async function POST(request: NextRequest) {
             }
           }
         } catch (err) {
+          streamFailed = true;
           console.error("[Chat] Stream error:", err instanceof Error ? err.message : err);
           controller.enqueue(
             encoder.encode(
@@ -101,19 +125,27 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Save assistant message and update session timestamp for recency sorting
-        await Promise.all([
-          supabase.from("chat_messages").insert({
+        // Only save assistant message if we got actual content
+        if (fullContent) {
+          const { error: saveErr } = await supabase.from("chat_messages").insert({
             session_id: currentSessionId,
             role: "assistant",
             content: fullContent,
-            sources,
-          }),
-          supabase
-            .from("chat_sessions")
-            .update({ updated_at: new Date().toISOString() })
-            .eq("id", currentSessionId),
-        ]);
+            sources: streamFailed ? undefined : sources,
+          });
+          if (saveErr) {
+            console.error("[Chat] Failed to save assistant message:", saveErr.message);
+          }
+        }
+
+        // Always update session timestamp
+        const { error: updateErr } = await supabase
+          .from("chat_sessions")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", currentSessionId);
+        if (updateErr) {
+          console.error("[Chat] Failed to update session:", updateErr.message);
+        }
 
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
@@ -132,6 +164,25 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     return handleApiError(err);
   }
+}
+
+/** Fetch prior messages in this session to provide multi-turn context. */
+async function fetchConversationHistory(
+  supabase: Awaited<ReturnType<typeof requireAuth>>["supabase"],
+  sessionId: string
+): Promise<{ role: "user" | "assistant"; content: string }[]> {
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("role, content")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true })
+    .limit(MAX_HISTORY_TURNS * 2);
+
+  if (error || !data) return [];
+
+  return data
+    .filter((m) => m.content && (m.role === "user" || m.role === "assistant"))
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 }
 
 /** Fetch RAG context from Pinecone for the given query. */

@@ -143,7 +143,7 @@ export function useChatStream({ userId, initialSessions, initialProtocolId }: Us
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId
-                    ? { ...m, content: "Sorry, something went wrong. Please try again." }
+                    ? { ...m, content: "Sorry, something went wrong. Please try again.", sources: undefined }
                     : m
                 )
               );
@@ -158,7 +158,7 @@ export function useChatStream({ userId, initialSessions, initialProtocolId }: Us
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: "Sorry, something went wrong. Please try again." }
+            ? { ...m, content: "Sorry, something went wrong. Please try again.", sources: undefined }
             : m
         )
       );
