@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout PR merge commit
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           persist-credentials: false
