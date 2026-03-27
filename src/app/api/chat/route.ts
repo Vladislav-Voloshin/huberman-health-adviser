@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
 import { queryVectors } from "@/lib/pinecone/client";
 import { getEmbedding, getAnthropicClient } from "@/lib/pinecone/embeddings";
+import { checkRateLimit } from "@/lib/api/rate-limit";
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_HISTORY_TURNS = 20;
@@ -9,6 +10,9 @@ const MAX_HISTORY_TURNS = 20;
 export async function POST(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
+
+    const rateLimited = checkRateLimit(user.id);
+    if (rateLimited) return rateLimited;
 
     const { message, session_id, protocol_id } = await request.json();
 
