@@ -11,7 +11,7 @@ test.describe("Profile Stats & Streaks", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("profile shows user email", async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe("Profile Stats & Streaks", () => {
   });
 
   test("profile shows Streaks & Stats section", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Streak") ||
         content?.includes("streak") ||
@@ -29,7 +29,7 @@ test.describe("Profile Stats & Streaks", () => {
   });
 
   test("stats section shows Active Protocols count", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Active Protocols") ||
         content?.includes("active protocols")
@@ -37,21 +37,21 @@ test.describe("Profile Stats & Streaks", () => {
   });
 
   test("stats section shows Total Days", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Total Days") || content?.includes("total days")
     ).toBeTruthy();
   });
 
   test("stats section shows Best Streak", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Best Streak") || content?.includes("best streak")
     ).toBeTruthy();
   });
 
   test("health profile shows survey data", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     // Should show health profile data from onboarding survey
     expect(
       content?.includes("Health Profile") ||
@@ -62,7 +62,7 @@ test.describe("Profile Stats & Streaks", () => {
   });
 
   test("member since date is displayed", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Member since") || content?.includes("member since")
     ).toBeTruthy();

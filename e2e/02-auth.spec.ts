@@ -138,7 +138,7 @@ test.describe("Auth Redirects", () => {
     page,
   }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/protocols/);
   });
 

@@ -14,22 +14,26 @@ test.describe("Protocol Listing", () => {
     // Navigate to protocols if not already there
     if (!page.url().includes("/protocols")) {
       await page.goto("/protocols");
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("domcontentloaded");
     }
+    // Wait for protocol cards to load from Supabase
+    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
   });
 
   test("displays protocols page with title", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await expect(page.getByRole("heading", { name: /protocols/i }).first()).toBeVisible();
   });
 
   test("shows category filter buttons", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Should have an "All" filter and at least some category filters
-    const content = await page.textContent("body");
+    // Wait for protocol cards to load from Supabase before checking filters
+    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+
+    const content = await page.innerText("body");
     expect(content).toContain("All");
 
     // Check for at least a few categories
@@ -43,36 +47,41 @@ test.describe("Protocol Listing", () => {
 
   test("shows protocol cards", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Should show at least one protocol card (we have 34 protocols)
+    // Wait for cards to render from Supabase
     const cards = page.locator("a[href^='/protocols/']");
+    await cards.first().waitFor({ timeout: 15000 });
     const count = await cards.count();
     expect(count).toBeGreaterThan(0);
   });
 
   test("protocol cards show title and category info", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    // First protocol card should have text content
+    // Wait for cards to load
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     const cardText = await firstCard.textContent();
     expect(cardText?.length).toBeGreaterThan(5);
   });
 
   test("category filter changes displayed protocols", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Count all protocols
+    // Wait for cards to load, then count
+    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
     const allCards = await page.locator("a[href^='/protocols/']").count();
 
     // Click a specific category filter (Sleep)
     const sleepButton = page.getByRole("button", { name: /sleep/i });
     if (await sleepButton.isVisible()) {
       await sleepButton.click();
-      await page.waitForTimeout(500);
+
+      // Wait for filtered results to render
+      await expect(page.locator("a[href^='/protocols/']").first()).toBeVisible();
 
       // Should show fewer or equal protocols
       const filteredCards = await page
@@ -84,9 +93,10 @@ test.describe("Protocol Listing", () => {
 
   test("clicking protocol card navigates to detail page", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     const href = await firstCard.getAttribute("href");
 
     await firstCard.click();
@@ -105,22 +115,25 @@ test.describe("Protocol Detail", () => {
   }) => {
     // Navigate to protocols and click the first one
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
-    // Should show protocol content
-    const content = await page.textContent("body");
+    // Wait for protocol detail content to load (h1 title)
+    await page.waitForSelector("h1", { timeout: 15000 });
+    const content = await page.innerText("body");
     expect(content?.length).toBeGreaterThan(100);
   });
 
   test("shows back link to protocols list", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
@@ -137,14 +150,16 @@ test.describe("Protocol Detail", () => {
 
   test("shows protocol tools/steps", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
-    // Should display ranked tools
-    const content = await page.textContent("body");
+    // Wait for detail page to render
+    await page.waitForSelector("h1", { timeout: 15000 });
+    const content = await page.innerText("body");
     // Tools should have numbered ranks or descriptions
     expect(
       content?.includes("instructions") ||
@@ -159,9 +174,10 @@ test.describe("Protocol Detail", () => {
     page,
   }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
@@ -173,9 +189,10 @@ test.describe("Protocol Detail", () => {
 
   test("can toggle protocol in My Protocols", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
@@ -197,9 +214,10 @@ test.describe("Protocol Detail", () => {
 
   test("has Ask AI / chat CTA", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const firstCard = page.locator("a[href^='/protocols/']").first();
+    await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
 
@@ -212,7 +230,7 @@ test.describe("Protocol Detail", () => {
       expect(href).toContain("/chat");
     } else {
       // Chat CTA might be text-based
-      const content = await page.textContent("body");
+      const content = await page.innerText("body");
       expect(
         content?.includes("questions") ||
           content?.includes("chat") ||

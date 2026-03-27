@@ -100,5 +100,5 @@ export async function signOut(page: Page) {
  * Wait for page to be fully loaded (no network activity)
  */
 export async function waitForPageLoad(page: Page) {
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 }

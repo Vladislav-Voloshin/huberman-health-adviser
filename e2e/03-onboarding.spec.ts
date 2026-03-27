@@ -18,12 +18,12 @@ test.describe("Onboarding Flow", () => {
 
   test("onboarding page loads with step 0 content", async ({ page }) => {
     await page.goto("/onboarding");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     if (page.url().includes("/auth")) return;
 
     if (page.url().includes("/onboarding")) {
-      const content = await page.textContent("body");
+      const content = await page.innerText("body");
       expect(
         content?.includes("health goals") || content?.includes("Welcome")
       ).toBeTruthy();
@@ -32,7 +32,7 @@ test.describe("Onboarding Flow", () => {
 
   test("onboarding has health goal options", async ({ page }) => {
     await page.goto("/onboarding");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     if (!page.url().includes("/onboarding")) return;
 
@@ -80,7 +80,7 @@ test.describe("Onboarding Persistence", () => {
 
     // Reload the page — should stay on protocols, not redirect to onboarding
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     expect(page.url()).toContain("/protocols");
     expect(page.url()).not.toContain("/onboarding");
@@ -93,7 +93,7 @@ test.describe("Onboarding Persistence", () => {
 
     // Go directly to /onboarding — page should load (not crash)
     await page.goto("/onboarding");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Page should either show onboarding or redirect — either is acceptable
     // The key test is it doesn't error out

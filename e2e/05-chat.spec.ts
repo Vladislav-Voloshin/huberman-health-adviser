@@ -12,7 +12,7 @@ test.describe("Chat Interface", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/chat");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("displays empty chat state with suggestions", async ({ page }) => {
@@ -66,6 +66,9 @@ test.describe("Chat Interface", () => {
   test("sending a message shows user bubble and streaming response", async ({
     page,
   }) => {
+    // This test requires a live ANTHROPIC_API_KEY — skip in CI when unavailable
+    test.skip(!process.env.ANTHROPIC_API_KEY, "Skipping: ANTHROPIC_API_KEY not set");
+
     const input = page.getByPlaceholder(/ask about health protocols/i);
     await input.fill("What is cold exposure?");
 
@@ -84,8 +87,8 @@ test.describe("Chat Interface", () => {
     const assistantBubble = messagesArea.locator('[class*="bg-muted"]').first();
     await expect(assistantBubble).toBeVisible();
 
-    // Wait for streaming to complete (the cursor disappears)
-    await page.waitForTimeout(10000);
+    // Wait for streaming to complete — response should have substantial content
+    await expect(assistantBubble).toContainText(/.{10,}/, { timeout: 15000 });
 
     const responseText = await assistantBubble.textContent();
     expect(responseText?.length).toBeGreaterThan(10);
@@ -93,11 +96,11 @@ test.describe("Chat Interface", () => {
 
   test("can send message with Enter key", async ({ page }) => {
     const input = page.getByPlaceholder(/ask about health protocols/i);
-    await input.fill("Hello");
+    await input.fill("Hello from e2e test");
     await input.press("Enter");
 
-    // User message should appear
-    await expect(page.getByText("Hello")).toBeVisible();
+    // User message should appear (first() to avoid sidebar duplicates)
+    await expect(page.getByText("Hello from e2e test").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("Shift+Enter adds newline instead of sending", async ({ page }) => {

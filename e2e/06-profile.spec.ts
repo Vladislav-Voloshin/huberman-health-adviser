@@ -11,7 +11,7 @@ test.describe("Profile Page", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("displays account section with email", async ({ page }) => {
@@ -20,21 +20,21 @@ test.describe("Profile Page", () => {
   });
 
   test("shows Account information card", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Account") || content?.includes("account")
     ).toBeTruthy();
   });
 
   test("shows Health Profile section", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Health") || content?.includes("Profile")
     ).toBeTruthy();
   });
 
   test("shows My Protocol Stack section", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     expect(
       content?.includes("Protocol") ||
         content?.includes("protocol") ||
@@ -58,7 +58,7 @@ test.describe("Profile Page", () => {
   });
 
   test("protocol stack section exists on profile", async ({ page }) => {
-    const content = await page.textContent("body");
+    const content = await page.innerText("body");
     // Should mention protocols section — either active protocols or browse link
     expect(
       content?.includes("Protocol") ||
@@ -72,7 +72,7 @@ test.describe("Profile Navigation", () => {
   test("bottom nav Profile link navigates to profile", async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Click profile in bottom nav (👤 icon or "Profile" text)
     const profileNav = page.getByRole("link", { name: /profile/i });

@@ -14,7 +14,7 @@ test.describe("App Shell & Navigation", () => {
 
   test("app shell shows Craftwell logo in header", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     await expect(page.getByText("Craftwell")).toBeVisible();
   });
@@ -23,7 +23,7 @@ test.describe("App Shell & Navigation", () => {
     page,
   }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Check for nav links
     const protocolsLink = page.getByRole("link", { name: /protocols/i });
@@ -41,7 +41,7 @@ test.describe("App Shell & Navigation", () => {
 
   test("navigate from Protocols to Chat via bottom nav", async ({ page }) => {
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const chatLink = page.getByRole("link", { name: /chat/i });
     if (await chatLink.isVisible()) {
@@ -52,7 +52,7 @@ test.describe("App Shell & Navigation", () => {
 
   test("navigate from Chat to Profile via bottom nav", async ({ page }) => {
     await page.goto("/chat");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const profileLink = page.getByRole("link", { name: /profile/i });
     if (await profileLink.isVisible()) {
@@ -65,7 +65,7 @@ test.describe("App Shell & Navigation", () => {
     page,
   }) => {
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const protocolsLink = page.getByRole("link", { name: /protocols/i });
     if (await protocolsLink.isVisible()) {
@@ -76,7 +76,7 @@ test.describe("App Shell & Navigation", () => {
 
   test("Craftwell logo links to protocols", async ({ page }) => {
     await page.goto("/chat");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const logo = page.getByRole("link").filter({ hasText: "Craftwell" });
     if (await logo.isVisible()) {

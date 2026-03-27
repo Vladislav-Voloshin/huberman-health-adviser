@@ -43,7 +43,7 @@ test.describe("Landing Page", () => {
     await page.goto("/");
 
     // Should show some health categories
-    const pageContent = await page.textContent("body");
+    const pageContent = await page.innerText("body");
     const hasCategories =
       pageContent?.includes("Sleep") ||
       pageContent?.includes("Focus") ||
@@ -60,7 +60,7 @@ test.describe("Landing Page", () => {
     });
 
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Filter out known non-critical errors (e.g., favicon, hydration warnings)
     const criticalErrors = errors.filter(

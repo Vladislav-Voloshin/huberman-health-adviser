@@ -59,7 +59,7 @@ test.describe("Citation Display", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/chat");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("assistant response displays source citations", async ({ page }) => {

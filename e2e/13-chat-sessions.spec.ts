@@ -12,7 +12,7 @@ test.describe("Chat Session Management", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/chat");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("shows New Chat button", async ({ page }) => {
@@ -27,7 +27,8 @@ test.describe("Chat Session Management", () => {
       }).first();
       if (await hamburger.isVisible()) {
         await hamburger.click();
-        await page.waitForTimeout(300);
+        // Wait for sidebar overlay to appear
+        await page.getByRole("button", { name: /new chat/i }).waitFor({ timeout: 5000 }).catch(() => {});
       }
       // New Chat may now be visible in overlay
       const btn = page.getByRole("button", { name: /new chat/i });
@@ -48,14 +49,18 @@ test.describe("Chat Session Management", () => {
   });
 
   test("assistant response renders markdown formatting", async ({ page }) => {
+    test.skip(!process.env.ANTHROPIC_API_KEY, "Skipping: ANTHROPIC_API_KEY not set");
+
     const input = page.getByPlaceholder(/ask about health protocols/i);
     await input.fill("List 3 tips for better sleep");
 
     const sendBtn = page.getByRole("button", { name: /send/i });
     await sendBtn.click();
 
-    // Wait for assistant response
-    await page.waitForTimeout(10000);
+    // Wait for assistant response to render with substantial content
+    const messagesArea2 = page.locator(".max-w-3xl.mx-auto");
+    const assistantBubble = messagesArea2.locator('[class*="bg-muted"]').first();
+    await expect(assistantBubble).toContainText(/.{10,}/, { timeout: 15000 });
 
     // Check for markdown rendered elements (prose class wraps markdown)
     const proseElements = page.locator(".prose");

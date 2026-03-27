@@ -12,7 +12,9 @@ test.describe("Protocol Search", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/protocols");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    // Wait for protocol cards to load from Supabase
+    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
   });
 
   test("shows search input on protocols page", async ({ page }) => {
@@ -26,7 +28,10 @@ test.describe("Protocol Search", () => {
 
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("sleep");
-    await page.waitForTimeout(500);
+    // Wait for debounce to filter results
+    await page.waitForFunction(
+      () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+    );
 
     const filteredCards = await page.locator("a[href^='/protocols/']").count();
     expect(filteredCards).toBeGreaterThan(0);
@@ -36,7 +41,10 @@ test.describe("Protocol Search", () => {
   test("search with no results shows empty state", async ({ page }) => {
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("xyznonexistent12345");
-    await page.waitForTimeout(500);
+    // Wait for debounce to filter — expect zero results
+    await page.waitForFunction(
+      () => document.querySelectorAll("a[href^='/protocols/']").length === 0
+    );
 
     const cards = await page.locator("a[href^='/protocols/']").count();
     expect(cards).toBe(0);
@@ -47,11 +55,18 @@ test.describe("Protocol Search", () => {
 
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("sleep");
-    await page.waitForTimeout(500);
+    // Wait for debounce to filter results
+    await page.waitForFunction(
+      () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+    );
 
     // Clear the search
     await searchInput.fill("");
-    await page.waitForTimeout(500);
+    // Wait for all protocols to be restored
+    await page.waitForFunction(
+      (expected) => document.querySelectorAll("a[href^='/protocols/']").length === expected,
+      allCards
+    );
 
     const restoredCards = await page.locator("a[href^='/protocols/']").count();
     expect(restoredCards).toBe(allCards);
@@ -62,14 +77,21 @@ test.describe("Protocol Search", () => {
     const sleepButton = page.getByRole("button", { name: /sleep/i });
     if (await sleepButton.isVisible()) {
       await sleepButton.click();
-      await page.waitForTimeout(300);
+      // Wait for category filter to apply
+      await page.waitForFunction(
+        () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+      );
 
       const categoryCards = await page.locator("a[href^='/protocols/']").count();
 
       // Now also search
       const searchInput = page.getByPlaceholder("Search protocols...");
       await searchInput.fill("morning");
-      await page.waitForTimeout(500);
+      // Wait for debounce to apply combined filter
+      await page.waitForFunction(
+        (max) => document.querySelectorAll("a[href^='/protocols/']").length <= max,
+        categoryCards
+      );
 
       const combinedCards = await page.locator("a[href^='/protocols/']").count();
       expect(combinedCards).toBeLessThanOrEqual(categoryCards);
