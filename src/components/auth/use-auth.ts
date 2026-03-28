@@ -24,6 +24,7 @@ export function useAuth() {
   const [socialLoading, setSocialLoading] = useState(false);
   const [message, setMessage] = useState(consumeOAuthError);
   const [authMode, setAuthMode] = useState<"email" | "phone">("email");
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [otpSent, setOtpSent] = useState(false);
 
   const supabase = createClient();
@@ -113,6 +114,11 @@ export function useAuth() {
     setMessage("");
   }
 
+  function switchTab(newTab: "signin" | "signup") {
+    setTab(newTab);
+    setMessage("");
+  }
+
   function resetOtp() {
     setOtpSent(false);
     setOtp("");
@@ -121,8 +127,8 @@ export function useAuth() {
 
   return {
     email, setEmail, phone, setPhone, otp, setOtp, password, setPassword,
-    loading, socialLoading, message, authMode, otpSent,
+    loading, socialLoading, message, authMode, otpSent, tab,
     handleEmailSignUp, handleEmailSignIn, handlePhoneOtp, handleVerifyOtp,
-    handleSocialLogin, switchAuthMode, resetOtp,
+    handleSocialLogin, switchAuthMode, switchTab, resetOtp,
   };
 }

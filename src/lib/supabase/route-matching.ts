@@ -1,5 +1,5 @@
 /** Public routes that don't require authentication. */
-const PUBLIC_ROUTES = ["/", "/auth", "/protocols"];
+const PUBLIC_ROUTES = ["/", "/auth", "/protocols", "/privacy", "/terms"];
 
 /** Check whether a pathname is publicly accessible (no auth required). */
 export function isPublicRoute(pathname: string): boolean {
@@ -7,6 +7,8 @@ export function isPublicRoute(pathname: string): boolean {
     (route) =>
       pathname === route ||
       pathname.startsWith("/auth") ||
-      pathname.startsWith("/protocols")
+      pathname.startsWith("/protocols") ||
+      pathname.startsWith("/privacy") ||
+      pathname.startsWith("/terms")
   );
 }

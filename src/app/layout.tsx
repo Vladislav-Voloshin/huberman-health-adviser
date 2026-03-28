@@ -21,9 +21,39 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Craftwell — Science-Based Health Protocols",
+  metadataBase: new URL("https://craftwell.vercel.app"),
+  title: {
+    default: "Craftwell — Science-Based Health Protocols",
+    template: "Craftwell — %s",
+  },
   description:
     "Evidence-based health protocols ranked by effectiveness. Build your optimal routine with science-backed tools for sleep, focus, exercise, and more.",
+  keywords: [
+    "health protocols",
+    "science-based wellness",
+    "sleep optimization",
+    "focus improvement",
+    "exercise routines",
+    "evidence-based health",
+    "biohacking",
+    "Huberman",
+  ],
+  authors: [{ name: "Craftwell" }],
+  openGraph: {
+    title: "Craftwell — Science-Based Health Protocols",
+    description:
+      "Evidence-based health protocols ranked by effectiveness. Build your optimal routine with science-backed tools for sleep, focus, exercise, and more.",
+    url: "https://craftwell.vercel.app",
+    siteName: "Craftwell",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Craftwell — Science-Based Health Protocols",
+    description:
+      "Evidence-based health protocols ranked by effectiveness. Build your optimal routine with science-backed tools for sleep, focus, exercise, and more.",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
