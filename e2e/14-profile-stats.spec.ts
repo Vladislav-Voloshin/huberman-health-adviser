@@ -12,7 +12,8 @@ test.describe("Profile Stats & Streaks", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("domcontentloaded");
+    // Wait for the profile to fully render (not just the loading skeleton)
+    await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });
 
   test("profile shows user email", async ({ page }) => {
@@ -20,76 +21,61 @@ test.describe("Profile Stats & Streaks", () => {
   });
 
   test("profile shows Streaks & Stats section when protocols are active", async ({ page }) => {
-    const content = await page.innerText("body");
-    const hasActiveProtocols = content?.includes("Active Protocols") || content?.includes("active protocols");
+    const body = page.locator("body");
+    const hasActiveProtocols = await body.textContent().then((t) =>
+      /Active Protocols/i.test(t ?? "")
+    );
     // Stats section is conditionally rendered — only when user has active protocols
     if (hasActiveProtocols) {
-      expect(
-        content?.includes("Streak") ||
-          content?.includes("streak") ||
-          content?.includes("Stats") ||
-          content?.includes("stats")
-      ).toBeTruthy();
+      await expect(body).toContainText(/Streak|Stats/i);
     } else {
       // Without active protocols, the protocol section shows "Browse Protocols" instead
-      expect(
-        content?.includes("Browse Protocols") ||
-          content?.includes("No active protocols")
-      ).toBeTruthy();
+      await expect(body).toContainText(/Browse Protocols|No active protocols/i);
     }
   });
 
   test("stats section shows Active Protocols count when protocols are active", async ({ page }) => {
-    const content = await page.innerText("body");
-    const hasActiveProtocols = content?.includes("Active Protocols") || content?.includes("active protocols");
+    const body = page.locator("body");
+    const hasActiveProtocols = await body.textContent().then((t) =>
+      /Active Protocols/i.test(t ?? "")
+    );
     // Only assert the stat labels when the stats section is rendered
     if (hasActiveProtocols) {
-      expect(hasActiveProtocols).toBeTruthy();
+      await expect(body).toContainText(/Active Protocols/i);
     } else {
       // Verify the protocol stack card renders even without active protocols
-      expect(
-        content?.includes("Protocol Stack") ||
-          content?.includes("protocol") ||
-          content?.includes("Browse Protocols")
-      ).toBeTruthy();
+      await expect(body).toContainText(/Protocol Stack|protocol|Browse Protocols/i);
     }
   });
 
   test("stats section shows Total Days when protocols are active", async ({ page }) => {
-    const content = await page.innerText("body");
-    const hasActiveProtocols = content?.includes("Active Protocols") || content?.includes("active protocols");
+    const body = page.locator("body");
+    const hasActiveProtocols = await body.textContent().then((t) =>
+      /Active Protocols/i.test(t ?? "")
+    );
     if (hasActiveProtocols) {
-      expect(
-        content?.includes("Total Days") || content?.includes("total days")
-      ).toBeTruthy();
+      await expect(body).toContainText(/Total Days/i);
     }
   });
 
   test("stats section shows Best Streak when protocols are active", async ({ page }) => {
-    const content = await page.innerText("body");
-    const hasActiveProtocols = content?.includes("Active Protocols") || content?.includes("active protocols");
+    const body = page.locator("body");
+    const hasActiveProtocols = await body.textContent().then((t) =>
+      /Active Protocols/i.test(t ?? "")
+    );
     if (hasActiveProtocols) {
-      expect(
-        content?.includes("Best Streak") || content?.includes("best streak")
-      ).toBeTruthy();
+      await expect(body).toContainText(/Best Streak/i);
     }
   });
 
   test("health profile shows survey data", async ({ page }) => {
-    const content = await page.innerText("body");
     // Should show health profile data from onboarding survey
-    expect(
-      content?.includes("Health Profile") ||
-        content?.includes("Sleep Quality") ||
-        content?.includes("Stress Level") ||
-        content?.includes("Goals")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(
+      /Health Profile|Sleep Quality|Stress Level|Goals/i
+    );
   });
 
   test("member since date is displayed", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Member since") || content?.includes("member since")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Member since/i);
   });
 });

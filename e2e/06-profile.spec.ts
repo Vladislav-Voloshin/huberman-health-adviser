@@ -11,7 +11,8 @@ test.describe("Profile Page", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("domcontentloaded");
+    // Wait for the profile to fully render (not just the loading skeleton)
+    await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });
 
   test("displays account section with email", async ({ page }) => {
@@ -20,26 +21,15 @@ test.describe("Profile Page", () => {
   });
 
   test("shows Account information card", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Account") || content?.includes("account")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Account/i);
   });
 
   test("shows Health Profile section", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Health") || content?.includes("Profile")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Health|Profile/i);
   });
 
   test("shows My Protocol Stack section", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Protocol") ||
-        content?.includes("protocol") ||
-        content?.includes("Browse Protocols")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Protocol|Browse Protocols/i);
   });
 
   test("has sign out button", async ({ page }) => {
@@ -58,13 +48,7 @@ test.describe("Profile Page", () => {
   });
 
   test("protocol stack section exists on profile", async ({ page }) => {
-    const content = await page.innerText("body");
-    // Should mention protocols section — either active protocols or browse link
-    expect(
-      content?.includes("Protocol") ||
-        content?.includes("protocol") ||
-        content?.includes("Browse")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Protocol|Browse/i);
   });
 });
 
@@ -72,12 +56,12 @@ test.describe("Delete Account", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
     await page.goto("/profile");
-    await page.waitForLoadState("domcontentloaded");
+    // Wait for the profile to fully render (not just the loading skeleton)
+    await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });
 
   test("shows Danger Zone section with delete button", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(content?.includes("Danger Zone")).toBeTruthy();
+    await expect(page.locator("body")).toContainText("Danger Zone");
     const deleteBtn = page.getByRole("button", { name: /delete account/i });
     await expect(deleteBtn).toBeVisible();
   });

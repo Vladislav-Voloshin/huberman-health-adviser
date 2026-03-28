@@ -78,7 +78,6 @@ export function ProfileView({
     setStreaks(results);
   }, [activeProtocols]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchStreaks is async; setState happens in a callback, not synchronously
   useEffect(() => { fetchStreaks(); }, [fetchStreaks]);
 
   async function handleSignOut() {
