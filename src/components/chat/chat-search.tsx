@@ -24,23 +24,31 @@ export function ChatSearch({ onSelectResult }: ChatSearchProps) {
   const [showResults, setShowResults] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const latestQueryRef = useRef("");
 
   const search = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
+    const trimmed = q.trim();
+    latestQueryRef.current = trimmed;
+
+    if (trimmed.length < 2) {
       setResults([]);
       setShowResults(false);
       return;
     }
     setSearching(true);
     try {
-      const res = await fetch(`/api/chat/search?q=${encodeURIComponent(q.trim())}`);
+      const res = await fetch(`/api/chat/search?q=${encodeURIComponent(trimmed)}`);
+      if (latestQueryRef.current !== trimmed) return;
       if (res.ok) {
         const data = await res.json();
+        if (latestQueryRef.current !== trimmed) return;
         setResults(data.results);
         setShowResults(true);
       }
     } finally {
-      setSearching(false);
+      if (latestQueryRef.current === trimmed) {
+        setSearching(false);
+      }
     }
   }, []);
 
