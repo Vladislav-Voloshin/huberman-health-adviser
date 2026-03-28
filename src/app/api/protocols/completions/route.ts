@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
 import { getRequestId } from "@/lib/api/request-id";
-import { z } from "zod";
+import { getLocalDate, daysBetween } from "@/lib/api/date-utils";
+import { completionSchema } from "@/lib/api/schemas";
 
-const completionSchema = z.object({
-  protocol_id: z.string().uuid(),
-  tool_id: z.string().uuid(),
-  tz_offset: z.number().int().min(-720).max(720).optional(),
-});
-
-/** Get today's date in the user's local timezone using tz_offset (minutes). */
+/** Get today's date in the user's local timezone using tz_offset query param. */
 function getLocalToday(request: NextRequest): string {
   const offsetStr = new URL(request.url).searchParams.get("tz_offset");
   const offsetMinutes = offsetStr ? parseInt(offsetStr, 10) : 0;
-  const now = new Date();
-  const local = new Date(now.getTime() - offsetMinutes * 60000);
-  return local.toISOString().split("T")[0];
+  return getLocalDate(offsetMinutes);
 }
 
 export async function GET(request: NextRequest) {
@@ -65,10 +58,7 @@ export async function POST(request: NextRequest) {
     const { protocol_id, tool_id, tz_offset } = body;
 
     // Use client-provided timezone offset for local date
-    const offsetMinutes = tz_offset ?? 0;
-    const now = new Date();
-    const local = new Date(now.getTime() - offsetMinutes * 60000);
-    const today = local.toISOString().split("T")[0];
+    const today = getLocalDate(tz_offset ?? 0);
 
     // Check if already completed today
     const { data: existing } = await supabase
@@ -102,13 +92,6 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     return handleApiError(err, requestId);
   }
-}
-
-/** Compute the number of days between two YYYY-MM-DD strings using UTC to avoid DST issues. */
-function daysBetween(a: string, b: string): number {
-  const msA = Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10));
-  const msB = Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10));
-  return Math.round((msA - msB) / 86400000);
 }
 
 /** Calculate streak data for a protocol. */
