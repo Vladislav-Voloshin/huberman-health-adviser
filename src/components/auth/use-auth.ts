@@ -30,8 +30,17 @@ export function useAuth() {
   async function handleEmailSignIn() {
     setLoading(true);
     setMessage("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { setMessage(error.message); } else { window.location.href = "/protocols"; }
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setMessage(error.message);
+    } else if (data.user) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("onboarding_completed")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      window.location.href = profile?.onboarding_completed ? "/protocols" : "/onboarding";
+    }
     setLoading(false);
   }
 
@@ -46,8 +55,18 @@ export function useAuth() {
   async function handleVerifyOtp() {
     setLoading(true);
     setMessage("");
-    const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
-    if (error) { setMessage(error.message); } else { window.location.href = "/protocols"; }
+    const { error, data } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
+    if (error) {
+      setMessage(error.message);
+    } else if (data.user) {
+      // Check if user has completed onboarding
+      const { data: profile } = await supabase
+        .from("users")
+        .select("onboarding_completed")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      window.location.href = profile?.onboarding_completed ? "/protocols" : "/onboarding";
+    }
     setLoading(false);
   }
 
