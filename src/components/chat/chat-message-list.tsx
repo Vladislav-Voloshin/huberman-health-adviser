@@ -29,7 +29,7 @@ export function ChatMessageList({ messages, streamingId }: ChatMessageListProps)
           key={msg.id}
           className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
         >
-          <div className="max-w-[80%] group">
+          <div className="max-w-[85%] sm:max-w-[80%] group">
             <Card
               className={`px-4 py-3 ${
                 msg.role === "user"
@@ -62,13 +62,13 @@ export function ChatMessageList({ messages, streamingId }: ChatMessageListProps)
             </Card>
             {/* Timestamp + Copy button */}
             <div className="flex items-center gap-2 mt-1 px-1">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {formatTime(msg.created_at)}
               </span>
               {msg.role === "assistant" && msg.content && !streamingId && (
                 <button
                   onClick={() => copyToClipboard(msg.content, msg.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-1"
                   title="Copy message"
                 >
                   {copiedId === msg.id ? (

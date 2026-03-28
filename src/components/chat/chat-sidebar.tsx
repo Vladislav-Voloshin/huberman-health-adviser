@@ -141,7 +141,7 @@ export function ChatSidebar({
                       <p className="truncate font-medium text-xs">
                         {session.title || "New conversation"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {formatSessionDate(session.created_at)}
                       </p>
                     </button>
