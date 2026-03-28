@@ -66,6 +66,36 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
     setProtocolId(undefined);
   }, []);
 
+  const renameSession = useCallback(async (sessionId: string, title: string) => {
+    const res = await fetch("/api/chat/sessions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, title }),
+    });
+    if (res.ok) {
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, title } : s))
+      );
+      return true;
+    }
+    return false;
+  }, []);
+
+  const deleteSession = useCallback(async (sessionId: string) => {
+    const res = await fetch(`/api/chat/sessions?id=${sessionId}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      if (activeSession === sessionId) {
+        setMessages([]);
+        setActiveSession(null);
+      }
+      return true;
+    }
+    return false;
+  }, [activeSession]);
+
   const sendMessage = useCallback(async () => {
     if (!input.trim() || loading) return;
 
@@ -202,5 +232,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
     loadSession,
     startNewChat,
     sendMessage,
+    renameSession,
+    deleteSession,
   };
 }
