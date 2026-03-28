@@ -62,15 +62,25 @@ export default function AuthPage() {
               </div>
 
               {auth.authMode === "email" ? (
-                <EmailAuthForm
-                  email={auth.email}
-                  password={auth.password}
-                  loading={auth.loading}
-                  mode="signin"
-                  onEmailChange={auth.setEmail}
-                  onPasswordChange={auth.setPassword}
-                  onSubmit={auth.handleEmailSignIn}
-                />
+                <>
+                  <EmailAuthForm
+                    email={auth.email}
+                    password={auth.password}
+                    loading={auth.loading}
+                    mode="signin"
+                    onEmailChange={auth.setEmail}
+                    onPasswordChange={auth.setPassword}
+                    onSubmit={auth.handleEmailSignIn}
+                  />
+                  <div className="text-right">
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                </>
               ) : (
                 <PhoneAuthForm
                   phone={auth.phone}

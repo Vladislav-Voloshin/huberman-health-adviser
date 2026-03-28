@@ -76,19 +76,19 @@ test.describe("Chat Session Management", () => {
   test("suggestion buttons are visible in empty chat state", async ({
     page,
   }) => {
-    // Verify suggestion buttons exist
-    const suggestions = page.getByText(/improve my sleep quality/i);
-    await expect(suggestions).toBeVisible();
+    // Verify suggestion buttons exist (content varies based on user profile)
+    const suggestionBtn = page.getByTestId("chat-suggestion-btn").first();
+    await expect(suggestionBtn).toBeVisible({ timeout: 5000 });
   });
 
   test("clicking suggestion sends it as a message", async ({ page }) => {
-    const suggestion = page.getByText(
-      "How can I improve my sleep quality?"
-    );
-    await suggestion.click();
+    const suggestionBtn = page.getByTestId("chat-suggestion-btn").first();
+    await expect(suggestionBtn).toBeVisible({ timeout: 5000 });
+    const suggestionText = await suggestionBtn.textContent();
+    await suggestionBtn.click();
 
     // Should fill the input
     const input = page.getByPlaceholder(/ask about health protocols/i);
-    await expect(input).toHaveValue("How can I improve my sleep quality?");
+    await expect(input).toHaveValue(suggestionText!);
   });
 });
