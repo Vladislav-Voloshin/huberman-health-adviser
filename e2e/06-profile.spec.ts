@@ -68,6 +68,42 @@ test.describe("Profile Page", () => {
   });
 });
 
+test.describe("Delete Account", () => {
+  test.beforeEach(async ({ page }) => {
+    await signInTestUser(page);
+    await page.goto("/profile");
+    await page.waitForLoadState("domcontentloaded");
+  });
+
+  test("shows Danger Zone section with delete button", async ({ page }) => {
+    const content = await page.innerText("body");
+    expect(content?.includes("Danger Zone")).toBeTruthy();
+    const deleteBtn = page.getByRole("button", { name: /delete account/i });
+    await expect(deleteBtn).toBeVisible();
+  });
+
+  test("delete dialog requires typing DELETE to confirm", async ({ page }) => {
+    const deleteBtn = page.getByRole("button", { name: /delete account/i });
+    await deleteBtn.click();
+
+    // Dialog should appear
+    await expect(page.getByText("Delete your account?")).toBeVisible();
+
+    // Confirm button should be disabled until "DELETE" is typed
+    const confirmBtn = page.getByRole("button", { name: /permanently delete/i });
+    await expect(confirmBtn).toBeDisabled();
+
+    // Type wrong text — button stays disabled
+    const input = page.getByPlaceholder("Type DELETE to confirm");
+    await input.fill("nope");
+    await expect(confirmBtn).toBeDisabled();
+
+    // Type correct text — button enables
+    await input.fill("DELETE");
+    await expect(confirmBtn).toBeEnabled();
+  });
+});
+
 test.describe("Profile Navigation", () => {
   test("bottom nav Profile link navigates to profile", async ({ page }) => {
     await signInTestUser(page);

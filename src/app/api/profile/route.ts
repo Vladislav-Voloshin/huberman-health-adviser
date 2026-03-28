@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
 import { getRequestId } from "@/lib/api/request-id";
-import { getSupabaseAdmin } from "@/lib/ingestion/shared";
+import { coreEnv } from "@/lib/env";
 import { z } from "zod";
+
+/**
+ * Lightweight admin client that only requires Supabase keys —
+ * avoids importing getSupabaseAdmin which pulls in the full
+ * AI/ingestion env (ANTHROPIC_API_KEY, PINECONE_API_KEY, etc.).
+ */
+function getAdminClient() {
+  const { NEXT_PUBLIC_SUPABASE_URL } = coreEnv();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+  }
+  return createSupabaseClient(NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey);
+}
 
 const profileUpdateSchema = z.object({
   profile: z.object({
@@ -97,20 +112,31 @@ export async function DELETE(request: NextRequest) {
   try {
     const { user, supabase } = await requireAuth();
 
-    // Delete user data in order (child → parent to respect FK constraints)
-    // 1. Protocol completions
+    // ── 1. Delete auth user FIRST via service-role client ──
+    // If this fails the user's application data stays intact and they
+    // can still sign in — much safer than deleting data first and
+    // leaving an orphaned auth account.
+    const admin = getAdminClient();
+    const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+
+    if (authError) {
+      return apiError(authError.message, 500);
+    }
+
+    // ── 2. Delete application data (child → parent for FK order) ──
+    // Protocol completions
     await supabase
       .from("protocol_completions")
       .delete()
       .eq("user_id", user.id);
 
-    // 2. User protocols
+    // User protocols
     await supabase
       .from("user_protocols")
       .delete()
       .eq("user_id", user.id);
 
-    // 3. Chat messages (via sessions)
+    // Chat messages (via sessions)
     const { data: sessions } = await supabase
       .from("chat_sessions")
       .select("id")
@@ -124,31 +150,23 @@ export async function DELETE(request: NextRequest) {
         .in("session_id", sessionIds);
     }
 
-    // 4. Chat sessions
+    // Chat sessions
     await supabase
       .from("chat_sessions")
       .delete()
       .eq("user_id", user.id);
 
-    // 5. Survey responses
+    // Survey responses
     await supabase
       .from("survey_responses")
       .delete()
       .eq("user_id", user.id);
 
-    // 6. User profile row
+    // User profile row
     await supabase
       .from("users")
       .delete()
       .eq("id", user.id);
-
-    // 7. Delete auth user via service role
-    const admin = getSupabaseAdmin();
-    const { error: authError } = await admin.auth.admin.deleteUser(user.id);
-
-    if (authError) {
-      return apiError(authError.message, 500);
-    }
 
     return NextResponse.json({ status: "deleted" });
   } catch (err) {
