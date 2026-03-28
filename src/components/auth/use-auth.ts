@@ -1,7 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+
+// Read and clear ?error= from the URL on first render (set by OAuth callback)
+function consumeOAuthError(): string {
+  if (typeof window === "undefined") return "";
+  const params = new URLSearchParams(window.location.search);
+  const errorParam = params.get("error");
+  if (errorParam) {
+    window.history.replaceState({}, "", "/auth");
+    return decodeURIComponent(errorParam);
+  }
+  return "";
+}
 
 export function useAuth() {
   const [email, setEmail] = useState("");
@@ -10,22 +22,11 @@ export function useAuth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(consumeOAuthError);
   const [authMode, setAuthMode] = useState<"email" | "phone">("email");
   const [otpSent, setOtpSent] = useState(false);
 
   const supabase = createClient();
-
-  // Pick up OAuth errors passed as ?error= query param (e.g. from callback)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get("error");
-    if (errorParam) {
-      setMessage(decodeURIComponent(errorParam));
-      // Clean the URL so the error doesn't persist on refresh
-      window.history.replaceState({}, "", "/auth");
-    }
-  }, []);
 
   async function handleEmailSignUp() {
     setLoading(true);
