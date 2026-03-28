@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatSearch } from "./chat-search";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
@@ -98,10 +99,11 @@ export function ChatSidebar({
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } fixed md:relative z-30 md:z-auto w-64 h-full bg-background border-r border-border/40 flex flex-col transition-transform duration-200`}
       >
-        <div className="p-3 border-b border-border/40">
+        <div className="p-3 border-b border-border/40 space-y-2">
           <Button onClick={onNewChat} className="w-full" size="sm">
             + New Chat
           </Button>
+          <ChatSearch onSelectResult={onLoadSession} />
         </div>
         <ScrollArea className="flex-1 p-2">
           {sessions.length === 0 ? (
