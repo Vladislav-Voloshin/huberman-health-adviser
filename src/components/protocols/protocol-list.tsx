@@ -1,7 +1,21 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Heart, Search, X } from "lucide-react";
+import {
+  Heart,
+  Search,
+  X,
+  Moon,
+  Brain,
+  Dumbbell,
+  Apple,
+  Zap,
+  Snowflake,
+  Sun,
+  Target,
+  Smile,
+  ClipboardList,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -13,21 +27,22 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { FavoriteButton } from "./favorite-button";
 import type { Protocol, ProtocolCategoryRecord as ProtocolCategory } from "@/lib/types/database";
+import type { LucideIcon } from "lucide-react";
 
-const categoryMeta: Record<string, { icon: string; accent: string; bg: string }> = {
-  sleep: { icon: "🌙", accent: "text-indigo-500", bg: "bg-indigo-500/10" },
-  focus: { icon: "🧠", accent: "text-amber-500", bg: "bg-amber-500/10" },
-  exercise: { icon: "💪", accent: "text-emerald-500", bg: "bg-emerald-500/10" },
-  stress: { icon: "❤️", accent: "text-rose-500", bg: "bg-rose-500/10" },
-  nutrition: { icon: "🍎", accent: "text-green-500", bg: "bg-green-500/10" },
-  hormones: { icon: "⚡", accent: "text-yellow-500", bg: "bg-yellow-500/10" },
-  "cold-heat": { icon: "🧊", accent: "text-cyan-500", bg: "bg-cyan-500/10" },
-  light: { icon: "☀️", accent: "text-orange-500", bg: "bg-orange-500/10" },
-  motivation: { icon: "🎯", accent: "text-purple-500", bg: "bg-purple-500/10" },
-  "mental-health": { icon: "😊", accent: "text-pink-500", bg: "bg-pink-500/10" },
+const categoryMeta: Record<string, { icon: LucideIcon; accent: string; bg: string }> = {
+  sleep: { icon: Moon, accent: "text-indigo-500", bg: "bg-indigo-500/10" },
+  focus: { icon: Brain, accent: "text-amber-500", bg: "bg-amber-500/10" },
+  exercise: { icon: Dumbbell, accent: "text-emerald-500", bg: "bg-emerald-500/10" },
+  stress: { icon: Heart, accent: "text-rose-500", bg: "bg-rose-500/10" },
+  nutrition: { icon: Apple, accent: "text-green-500", bg: "bg-green-500/10" },
+  hormones: { icon: Zap, accent: "text-yellow-500", bg: "bg-yellow-500/10" },
+  "cold-heat": { icon: Snowflake, accent: "text-cyan-500", bg: "bg-cyan-500/10" },
+  light: { icon: Sun, accent: "text-orange-500", bg: "bg-orange-500/10" },
+  motivation: { icon: Target, accent: "text-purple-500", bg: "bg-purple-500/10" },
+  "mental-health": { icon: Smile, accent: "text-pink-500", bg: "bg-pink-500/10" },
 };
 
-const defaultMeta = { icon: "📋", accent: "text-muted-foreground", bg: "bg-muted" };
+const defaultMeta = { icon: ClipboardList, accent: "text-muted-foreground", bg: "bg-muted" };
 
 function DifficultyDots({ difficulty }: { difficulty: string }) {
   const level = difficulty.toLowerCase().includes("easy")
@@ -101,24 +116,24 @@ export function ProtocolList({
           placeholder="Search protocols..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[44px]"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
           >
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      {/* Category filter — horizontal scroll on mobile */}
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
         <button
           onClick={() => { setSelectedCategory(null); setShowFavorites(false); }}
           className={cn(
-            "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors",
+            "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors min-h-[36px]",
             !selectedCategory && !showFavorites
               ? "bg-primary text-primary-foreground border-primary"
               : "border-border hover:border-foreground/30"
@@ -130,35 +145,39 @@ export function ProtocolList({
           <button
             onClick={() => { setShowFavorites(!showFavorites); setSelectedCategory(null); }}
             className={cn(
-              "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors flex items-center gap-1",
+              "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors flex items-center gap-1 min-h-[36px]",
               showFavorites
                 ? "bg-rose-500 text-white border-rose-500"
                 : "border-border hover:border-foreground/30"
             )}
           >
-            <Heart className={cn("w-3 h-3", showFavorites ? "fill-current" : "")} />
+            <Heart className={cn("w-3.5 h-3.5", showFavorites ? "fill-current" : "")} />
             Favorites
           </button>
         )}
-        {categories.map((cat) => (
-          <button
-            key={cat.slug}
-            onClick={() =>
-              setSelectedCategory(
-                selectedCategory === cat.slug ? null : cat.slug
-              )
-            }
-            className={cn(
-              "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors flex items-center gap-1",
-              selectedCategory === cat.slug
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border hover:border-foreground/30"
-            )}
-          >
-            <span>{(categoryMeta[cat.slug] || defaultMeta).icon}</span>
-            {cat.name}
-          </button>
-        ))}
+        {categories.map((cat) => {
+          const meta = categoryMeta[cat.slug] || defaultMeta;
+          const Icon = meta.icon;
+          return (
+            <button
+              key={cat.slug}
+              onClick={() =>
+                setSelectedCategory(
+                  selectedCategory === cat.slug ? null : cat.slug
+                )
+              }
+              className={cn(
+                "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors flex items-center gap-1.5 min-h-[36px]",
+                selectedCategory === cat.slug
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border hover:border-foreground/30"
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {cat.name}
+            </button>
+          );
+        })}
       </div>
 
       {/* Protocol cards */}
@@ -181,15 +200,16 @@ export function ProtocolList({
           )}
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((protocol) => {
             const meta = categoryMeta[protocol.category] || defaultMeta;
+            const Icon = meta.icon;
             return (
               <Link
                 key={protocol.id}
                 href={`/protocols/${protocol.slug}`}
               >
-                <Card className="hover:border-foreground/20 transition-all cursor-pointer group overflow-hidden">
+                <Card className="hover:border-foreground/20 transition-all cursor-pointer group overflow-hidden h-full">
                   <div className="flex">
                     {/* Category accent bar */}
                     <div className={cn("w-1 shrink-0 rounded-l", meta.bg.replace("/10", "/40"))} />
@@ -197,8 +217,8 @@ export function ProtocolList({
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", meta.bg)}>
-                              <span className="text-sm">{meta.icon}</span>
+                            <div className={cn("w-6 h-6 rounded-md flex items-center justify-center shrink-0", meta.bg)}>
+                              <Icon className={cn("w-3.5 h-3.5", meta.accent)} />
                             </div>
                             <div className="min-w-0">
                               <CardTitle className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
@@ -207,7 +227,7 @@ export function ProtocolList({
                               <div className="flex items-center gap-2 mt-0.5">
                                 <DifficultyDots difficulty={protocol.difficulty} />
                                 {protocol.time_commitment && (
-                                  <span className="text-[10px] text-muted-foreground">
+                                  <span className="text-xs text-muted-foreground">
                                     {protocol.time_commitment}
                                   </span>
                                 )}
@@ -230,7 +250,7 @@ export function ProtocolList({
                           {protocol.tags?.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
-                              className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                              className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
                             >
                               {tag}
                             </span>

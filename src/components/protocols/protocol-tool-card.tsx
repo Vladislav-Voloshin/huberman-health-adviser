@@ -84,7 +84,7 @@ export function ProtocolToolCard({
                 if (refMatch) {
                   return (
                     <div key={i} className="mt-2 p-2 rounded-md bg-muted/50 border border-border/30">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mb-1">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground/70 mb-1">
                         Reference
                       </p>
                       <a

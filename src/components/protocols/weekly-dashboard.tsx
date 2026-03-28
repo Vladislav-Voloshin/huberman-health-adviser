@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,9 +50,9 @@ function formatWeekRange(start: string, end: string): string {
 }
 
 function CellColor({ percentage }: { percentage: number }) {
-  if (percentage === 100) return "bg-green-500/80 dark:bg-green-500/60";
-  if (percentage > 0) return "bg-yellow-400/70 dark:bg-yellow-500/50";
-  return "bg-muted";
+  if (percentage === 100) return "bg-green-500/80 dark:bg-green-400/50";
+  if (percentage > 0) return "bg-yellow-400/70 dark:bg-yellow-400/40";
+  return "bg-muted dark:bg-muted/60";
 }
 
 export function WeeklyDashboard() {
@@ -89,7 +89,7 @@ export function WeeklyDashboard() {
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Progress Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Progress Dashboard</h1>
           <p className="text-sm text-muted-foreground">
             Track your weekly protocol adherence
           </p>
@@ -101,7 +101,7 @@ export function WeeklyDashboard() {
 
       {/* Week navigation */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => navigateWeek(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => navigateWeek(-1)} className="min-w-[44px] min-h-[44px]">
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <div className="text-center">
@@ -109,7 +109,7 @@ export function WeeklyDashboard() {
             {data ? formatWeekRange(data.week_start, data.week_end) : "Loading..."}
           </p>
           {isCurrentWeek && (
-            <Badge variant="secondary" className="text-[10px] mt-1">This week</Badge>
+            <Badge variant="secondary" className="text-xs mt-1">This week</Badge>
           )}
         </div>
         <Button
@@ -117,6 +117,7 @@ export function WeeklyDashboard() {
           size="icon"
           onClick={() => navigateWeek(1)}
           disabled={isCurrentWeek}
+          className="min-w-[44px] min-h-[44px]"
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
@@ -157,14 +158,14 @@ export function WeeklyDashboard() {
             </CardContent>
           </Card>
 
-          {/* Weekly grid */}
+          {/* Weekly grid — horizontal scroll on mobile */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Weekly Completion</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               {/* Day headers */}
-              <div className="grid gap-1" style={{ gridTemplateColumns: "minmax(100px, 1fr) repeat(7, 1fr)" }}>
+              <div className="grid gap-1 min-w-[480px]" style={{ gridTemplateColumns: "minmax(100px, 1fr) repeat(7, 1fr)" }}>
                 <div />
                 {DAY_LABELS.map((day, i) => {
                   const dateStr = data.dates[i];
@@ -174,7 +175,7 @@ export function WeeklyDashboard() {
                     <div
                       key={day}
                       className={cn(
-                        "text-center text-[10px] pb-1",
+                        "text-center text-xs pb-1",
                         isToday ? "font-bold text-primary" : "text-muted-foreground"
                       )}
                     >
@@ -186,9 +187,8 @@ export function WeeklyDashboard() {
 
                 {/* Protocol rows */}
                 {data.protocols.map((protocol) => (
-                  <>
+                  <Fragment key={protocol.protocol_id}>
                     <Link
-                      key={protocol.protocol_id}
                       href={`/protocols/${protocol.slug}`}
                       className="text-xs font-medium truncate pr-2 flex items-center hover:text-primary transition-colors"
                     >
@@ -198,7 +198,7 @@ export function WeeklyDashboard() {
                       <div
                         key={`${protocol.protocol_id}-${day.date}`}
                         className={cn(
-                          "aspect-square rounded-sm flex items-center justify-center text-[10px] font-medium",
+                          "aspect-square rounded-sm flex items-center justify-center text-xs font-medium",
                           CellColor({ percentage: day.percentage }),
                           day.percentage === 100
                             ? "text-green-950 dark:text-green-100"
@@ -211,22 +211,22 @@ export function WeeklyDashboard() {
                         {day.percentage > 0 ? `${day.percentage}%` : ""}
                       </div>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </div>
 
               {/* Legend */}
-              <div className="flex items-center gap-4 mt-4 pt-3 border-t text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-4 mt-4 pt-3 border-t text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm bg-green-500/80 dark:bg-green-500/60" />
+                  <div className="w-3 h-3 rounded-sm bg-green-500/80 dark:bg-green-400/50" />
                   100% Complete
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm bg-yellow-400/70 dark:bg-yellow-500/50" />
+                  <div className="w-3 h-3 rounded-sm bg-yellow-400/70 dark:bg-yellow-400/40" />
                   Partial
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm bg-muted" />
+                  <div className="w-3 h-3 rounded-sm bg-muted dark:bg-muted/60" />
                   None
                 </div>
               </div>

@@ -139,7 +139,7 @@ export function ChatSearch({ onSelectResult }: ChatSearchProps) {
                 onClick={() => handleSelect(r.session_id)}
                 className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-b-0"
               >
-                <p className="text-[10px] text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {r.session_title} · {r.role}
                 </p>
                 <p className="text-xs line-clamp-2 mt-0.5">{r.snippet}</p>
