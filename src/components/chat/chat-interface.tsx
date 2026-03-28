@@ -8,6 +8,7 @@ import { ChatSidebar } from "./chat-sidebar";
 import { ChatMessageList } from "./chat-message-list";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ChatInput } from "./chat-input";
+import { ProtocolContextBanner, type ProtocolContext } from "./protocol-context-banner";
 import type { ChatSession } from "./types";
 
 export type { ChatSession };
@@ -16,12 +17,14 @@ export function ChatInterface({
   userId,
   sessions: initialSessions,
   initialProtocolId,
+  initialProtocolContext,
   userFocusAreas = [],
   userHealthGoals = [],
 }: {
   userId: string;
   sessions: ChatSession[];
   initialProtocolId?: string;
+  initialProtocolContext?: ProtocolContext;
   userFocusAreas?: string[];
   userHealthGoals?: string[];
 }) {
@@ -31,6 +34,7 @@ export function ChatInterface({
     setInput,
     loading,
     activeSession,
+    protocolId,
     streamingId,
     sessions,
     loadingSession,
@@ -44,6 +48,10 @@ export function ChatInterface({
   } = useChatStream({ userId, initialSessions, initialProtocolId });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Show the banner when protocol context is active and hasn't been dismissed
+  const showProtocolBanner = !!protocolId && !!initialProtocolContext && !bannerDismissed;
 
   useEffect(() => {
     scrollToBottom();
@@ -89,6 +97,14 @@ export function ChatInterface({
               : "New Chat"}
           </p>
         </div>
+
+        {/* Protocol context banner */}
+        {showProtocolBanner && (
+          <ProtocolContextBanner
+            protocol={initialProtocolContext}
+            onDismiss={() => setBannerDismissed(true)}
+          />
+        )}
 
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-4" ref={scrollRef}>

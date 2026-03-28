@@ -38,12 +38,27 @@ export default async function ChatPage({
       .maybeSingle(),
   ]);
 
+  // Fetch protocol details when arriving from a protocol page
+  let protocolContext: { id: string; title: string; description: string } | undefined;
+  if (params.protocol) {
+    const { data: protocol } = await supabase
+      .from("protocols")
+      .select("id, title, description")
+      .eq("id", params.protocol)
+      .maybeSingle();
+
+    if (protocol) {
+      protocolContext = protocol;
+    }
+  }
+
   return (
     <AppShell>
       <ChatInterface
         userId={user.id}
         sessions={sessions || []}
-        initialProtocolId={params.protocol}
+        initialProtocolId={protocolContext?.id}
+        initialProtocolContext={protocolContext}
         userFocusAreas={survey?.focus_areas ?? []}
         userHealthGoals={survey?.health_goals ?? []}
       />
