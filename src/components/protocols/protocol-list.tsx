@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Heart, Search, X } from "lucide-react";
 import {
   Card,
@@ -64,9 +64,21 @@ export function ProtocolList({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clientFavoriteIds, setClientFavoriteIds] = useState<Set<string>>(
+    () => new Set(favoriteIds)
+  );
+
+  const onFavoriteChange = useCallback((protocolId: string, favorited: boolean) => {
+    setClientFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (favorited) next.add(protocolId);
+      else next.delete(protocolId);
+      return next;
+    });
+  }, []);
 
   const filtered = protocols.filter((p) => {
-    if (showFavorites && !favoriteIds.includes(p.id)) return false;
+    if (showFavorites && !clientFavoriteIds.has(p.id)) return false;
     if (selectedCategory && p.category !== selectedCategory) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -204,8 +216,9 @@ export function ProtocolList({
                           </div>
                           <FavoriteButton
                             protocolId={protocol.id}
-                            initialFavorited={favoriteIds.includes(protocol.id)}
+                            initialFavorited={clientFavoriteIds.has(protocol.id)}
                             isLoggedIn={isLoggedIn}
+                            onToggle={onFavoriteChange}
                           />
                         </div>
                         <CardDescription className="text-xs line-clamp-2 mt-1">

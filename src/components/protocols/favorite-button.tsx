@@ -9,11 +9,13 @@ export function FavoriteButton({
   initialFavorited = false,
   isLoggedIn = false,
   size = "sm",
+  onToggle,
 }: {
   protocolId: string;
   initialFavorited?: boolean;
   isLoggedIn?: boolean;
   size?: "sm" | "md";
+  onToggle?: (protocolId: string, favorited: boolean) => void;
 }) {
   const [favorited, setFavorited] = useState(initialFavorited);
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,7 @@ export function FavoriteButton({
       if (res.ok) {
         const data = await res.json();
         setFavorited(data.favorited);
+        onToggle?.(protocolId, data.favorited);
       }
     } finally {
       setLoading(false);
