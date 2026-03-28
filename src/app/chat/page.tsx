@@ -45,7 +45,7 @@ export default async function ChatPage({
       .from("protocols")
       .select("id, title, description")
       .eq("id", params.protocol)
-      .single();
+      .maybeSingle();
 
     if (protocol) {
       protocolContext = protocol;
