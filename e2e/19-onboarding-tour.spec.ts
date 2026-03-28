@@ -23,11 +23,11 @@ test.describe("Onboarding Tour", () => {
 
     // Step 1: Protocols
     await expect(page.getByText("Browse Protocols")).toBeVisible({ timeout: 5000 });
-    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next", exact: true }).click();
 
     // Step 2: Chat
     await expect(page.getByText("Ask the AI Coach")).toBeVisible();
-    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next", exact: true }).click();
 
     // Step 3: Profile
     await expect(page.getByText("Track Your Progress")).toBeVisible();
