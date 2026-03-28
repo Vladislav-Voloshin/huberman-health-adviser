@@ -88,8 +88,11 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
     if (res.ok) {
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
       if (activeSession === sessionId) {
+        abortRef.current?.abort();
         setMessages([]);
         setActiveSession(null);
+        setLoading(false);
+        setStreamingId(null);
       }
       return true;
     }
