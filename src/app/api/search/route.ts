@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
 import { getEmbedding } from "@/lib/pinecone/embeddings";
 import { queryVectors } from "@/lib/pinecone/client";
+import { getRequestId } from "@/lib/api/request-id";
+import logger from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request);
+  const log = logger.child({ requestId, route: "GET /api/search" });
+
   try {
     const { supabase } = await requireAuth();
 
@@ -47,7 +52,7 @@ export async function GET(request: NextRequest) {
             content: (m.metadata?.content as string)?.slice(0, 300),
           }));
         } catch (err) {
-          console.warn("[Search] Semantic search unavailable:", err instanceof Error ? err.message : err);
+          log.warn({ err }, "Semantic search unavailable");
           return [];
         }
       })(),
@@ -58,6 +63,6 @@ export async function GET(request: NextRequest) {
       knowledge: knowledgeResults,
     });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }

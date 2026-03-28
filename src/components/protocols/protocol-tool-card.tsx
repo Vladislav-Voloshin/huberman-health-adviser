@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProtocolTool } from "@/lib/types/database";
@@ -39,9 +40,7 @@ export function ProtocolToolCard({
               aria-label={isCompleted ? `Mark ${tool.title} incomplete` : `Mark ${tool.title} complete`}
             >
               {isCompleted ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+                <Check className="w-4 h-4" strokeWidth={3} />
               ) : (
                 <span className="text-xs font-bold text-muted-foreground">{index + 1}</span>
               )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { z } from "zod";
+import logger from "@/lib/logger";
 
 /**
  * Authenticate the current request via Supabase session cookie.
@@ -60,12 +61,12 @@ export function apiError(message: string, status: number) {
 }
 
 /** Catch-all handler: returns 401 for AuthError, 500 for everything else. */
-export function handleApiError(err: unknown) {
+export function handleApiError(err: unknown, requestId?: string) {
   if (err instanceof AuthError) {
     return apiError("Unauthorized", 401);
   }
   const message = err instanceof Error ? err.message : String(err);
-  console.error("[API Error]", message);
+  logger.error({ err, requestId }, "API error");
   return apiError(
     process.env.NODE_ENV === "production"
       ? "Internal server error"

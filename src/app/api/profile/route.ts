@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
+import { getRequestId } from "@/lib/api/request-id";
 import { z } from "zod";
 
 const profileUpdateSchema = z.object({
@@ -35,6 +36,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const { user, supabase } = await requireAuth();
 
@@ -85,6 +87,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ status: "ok", ...results });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }
