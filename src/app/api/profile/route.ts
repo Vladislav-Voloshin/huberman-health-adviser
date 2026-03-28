@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
 import { getRequestId } from "@/lib/api/request-id";
+import { getSupabaseAdmin } from "@/lib/ingestion/shared";
 import { z } from "zod";
 
 const profileUpdateSchema = z.object({
@@ -86,6 +87,70 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ status: "ok", ...results });
+  } catch (err) {
+    return handleApiError(err, requestId);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const requestId = getRequestId(request);
+  try {
+    const { user, supabase } = await requireAuth();
+
+    // Delete user data in order (child → parent to respect FK constraints)
+    // 1. Protocol completions
+    await supabase
+      .from("protocol_completions")
+      .delete()
+      .eq("user_id", user.id);
+
+    // 2. User protocols
+    await supabase
+      .from("user_protocols")
+      .delete()
+      .eq("user_id", user.id);
+
+    // 3. Chat messages (via sessions)
+    const { data: sessions } = await supabase
+      .from("chat_sessions")
+      .select("id")
+      .eq("user_id", user.id);
+
+    if (sessions && sessions.length > 0) {
+      const sessionIds = sessions.map((s) => s.id);
+      await supabase
+        .from("chat_messages")
+        .delete()
+        .in("session_id", sessionIds);
+    }
+
+    // 4. Chat sessions
+    await supabase
+      .from("chat_sessions")
+      .delete()
+      .eq("user_id", user.id);
+
+    // 5. Survey responses
+    await supabase
+      .from("survey_responses")
+      .delete()
+      .eq("user_id", user.id);
+
+    // 6. User profile row
+    await supabase
+      .from("users")
+      .delete()
+      .eq("id", user.id);
+
+    // 7. Delete auth user via service role
+    const admin = getSupabaseAdmin();
+    const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+
+    if (authError) {
+      return apiError(authError.message, 500);
+    }
+
+    return NextResponse.json({ status: "deleted" });
   } catch (err) {
     return handleApiError(err, requestId);
   }
