@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { TourOverlay } from "@/components/tour/tour-overlay";
 
 const navItems = [
@@ -36,14 +36,13 @@ function ThemeToggle() {
   );
 }
 
+function getShowTour() {
+  return new URLSearchParams(window.location.search).get("tour") === "1";
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [showTour, setShowTour] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("tour") === "1") setShowTour(true);
-  }, []);
+  const showTour = useSyncExternalStore(emptySubscribe, getShowTour, () => false);
 
   return (
     <div className="flex flex-col min-h-screen">

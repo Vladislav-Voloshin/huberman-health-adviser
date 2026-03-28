@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,8 @@ const STORAGE_KEY = "craftwell_tour_completed";
 export function TourOverlay({ show }: { show?: boolean }) {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (show && !localStorage.getItem(STORAGE_KEY)) {
@@ -49,46 +50,46 @@ export function TourOverlay({ show }: { show?: boolean }) {
     }
   }, [show]);
 
-  const positionTooltip = useCallback(() => {
+  // Position tooltip and ring via refs (no setState in effect)
+  useEffect(() => {
     if (!visible) return;
-    const currentStep = TOUR_STEPS[step];
-    const el = document.querySelector(currentStep.target);
-    if (!el) return;
 
-    const rect = el.getBoundingClientRect();
-    const style: React.CSSProperties = { position: "fixed" };
+    function position() {
+      const currentStep = TOUR_STEPS[step];
+      const el = document.querySelector(currentStep.target);
+      if (!el) return;
 
-    switch (currentStep.position) {
-      case "top":
-        style.bottom = `${window.innerHeight - rect.top + 12}px`;
-        style.left = `${rect.left + rect.width / 2}px`;
-        style.transform = "translateX(-50%)";
-        break;
-      case "bottom":
-        style.top = `${rect.bottom + 12}px`;
-        style.left = `${rect.left + rect.width / 2}px`;
-        style.transform = "translateX(-50%)";
-        break;
-      case "left":
-        style.top = `${rect.top + rect.height / 2}px`;
-        style.right = `${window.innerWidth - rect.left + 12}px`;
-        style.transform = "translateY(-50%)";
-        break;
-      case "right":
-        style.top = `${rect.top + rect.height / 2}px`;
-        style.left = `${rect.right + 12}px`;
-        style.transform = "translateY(-50%)";
-        break;
+      const rect = el.getBoundingClientRect();
+
+      // Position tooltip
+      if (tooltipRef.current) {
+        const tt = tooltipRef.current;
+        tt.style.position = "fixed";
+        if (currentStep.position === "top") {
+          tt.style.bottom = `${window.innerHeight - rect.top + 12}px`;
+          tt.style.left = `${rect.left + rect.width / 2}px`;
+          tt.style.transform = "translateX(-50%)";
+          tt.style.top = "";
+          tt.style.right = "";
+        }
+      }
+
+      // Position highlight ring
+      if (ringRef.current) {
+        const ring = ringRef.current;
+        ring.style.position = "fixed";
+        ring.style.top = `${rect.top - 4}px`;
+        ring.style.left = `${rect.left - 4}px`;
+        ring.style.width = `${rect.width + 8}px`;
+        ring.style.height = `${rect.height + 8}px`;
+        ring.style.borderRadius = "12px";
+      }
     }
 
-    setTooltipStyle(style);
+    position();
+    window.addEventListener("resize", position);
+    return () => window.removeEventListener("resize", position);
   }, [visible, step]);
-
-  useEffect(() => {
-    positionTooltip();
-    window.addEventListener("resize", positionTooltip);
-    return () => window.removeEventListener("resize", positionTooltip);
-  }, [positionTooltip]);
 
   function handleNext() {
     if (step < TOUR_STEPS.length - 1) {
@@ -116,12 +117,15 @@ export function TourOverlay({ show }: { show?: boolean }) {
         onClick={completeTour}
       />
 
-      {/* Highlight target element */}
-      <HighlightRing selector={currentStep.target} />
+      {/* Highlight ring */}
+      <div
+        ref={ringRef}
+        className="fixed z-[101] ring-2 ring-primary ring-offset-2 ring-offset-background pointer-events-none"
+      />
 
       {/* Tooltip */}
       <div
-        style={tooltipStyle}
+        ref={tooltipRef}
         className={cn(
           "fixed z-[102] w-72 p-4 rounded-xl bg-background border border-border shadow-lg",
           "animate-in fade-in slide-in-from-bottom-2 duration-300"
@@ -154,35 +158,5 @@ export function TourOverlay({ show }: { show?: boolean }) {
         </div>
       </div>
     </>
-  );
-}
-
-function HighlightRing({ selector }: { selector: string }) {
-  const [style, setStyle] = useState<React.CSSProperties>({});
-
-  useEffect(() => {
-    function update() {
-      const el = document.querySelector(selector);
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      setStyle({
-        position: "fixed",
-        top: rect.top - 4,
-        left: rect.left - 4,
-        width: rect.width + 8,
-        height: rect.height + 8,
-        borderRadius: 12,
-      });
-    }
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [selector]);
-
-  return (
-    <div
-      style={style}
-      className="z-[101] ring-2 ring-primary ring-offset-2 ring-offset-background pointer-events-none"
-    />
   );
 }
