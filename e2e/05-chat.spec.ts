@@ -20,17 +20,11 @@ test.describe("Chat Interface", () => {
       page.getByText(/ask me anything about health/i)
     ).toBeVisible();
 
-    // Should show suggestion buttons
-    const suggestions = [
-      "How can I improve my sleep quality?",
-      "What's the best morning routine for focus?",
-      "Cold exposure benefits and protocol",
-      "Best supplements for stress management",
-    ];
-
-    for (const suggestion of suggestions) {
-      await expect(page.getByText(suggestion)).toBeVisible();
-    }
+    // Should show 4 suggestion buttons (content varies based on user profile)
+    const suggestionButtons = page.getByTestId("chat-suggestion-btn");
+    await expect(suggestionButtons.first()).toBeVisible({ timeout: 5000 });
+    const count = await suggestionButtons.count();
+    expect(count).toBe(4);
   });
 
   test("has message input and send button", async ({ page }) => {
@@ -54,13 +48,13 @@ test.describe("Chat Interface", () => {
   });
 
   test("clicking suggestion fills the input", async ({ page }) => {
-    const suggestion = page.getByText(
-      "How can I improve my sleep quality?"
-    );
-    await suggestion.click();
+    const suggestionBtn = page.getByTestId("chat-suggestion-btn").first();
+    await expect(suggestionBtn).toBeVisible({ timeout: 5000 });
+    const suggestionText = await suggestionBtn.textContent();
+    await suggestionBtn.click();
 
     const input = page.getByPlaceholder(/ask about health protocols/i);
-    await expect(input).toHaveValue("How can I improve my sleep quality?");
+    await expect(input).toHaveValue(suggestionText!);
   });
 
   test("sending a message shows user bubble and streaming response", async ({

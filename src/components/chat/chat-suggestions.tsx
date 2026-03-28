@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 const GENERIC_SUGGESTIONS = [
   "How can I improve my sleep quality?",
   "What's the best morning routine for focus?",
@@ -99,7 +101,15 @@ interface ChatSuggestionsProps {
 
 export function ChatSuggestions({ onSelect, focusAreas = [], healthGoals = [] }: ChatSuggestionsProps) {
   const hasPersonalization = focusAreas.length > 0 || healthGoals.length > 0;
-  const suggestions = buildSuggestions(focusAreas, healthGoals);
+
+  // Use GENERIC_SUGGESTIONS as initial state to match server render and avoid
+  // hydration mismatch. The useEffect below picks personalized suggestions
+  // client-side only (Math.random is non-deterministic across server/client).
+  const [suggestions, setSuggestions] = useState<string[]>(GENERIC_SUGGESTIONS);
+
+  useEffect(() => {
+    setSuggestions(buildSuggestions(focusAreas, healthGoals));
+  }, [focusAreas, healthGoals]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-20">
@@ -109,12 +119,16 @@ export function ChatSuggestions({ onSelect, focusAreas = [], healthGoals = [] }:
           ? "Here are some suggestions based on your interests."
           : "I use science-backed protocols and research to help you optimize sleep, exercise, supplements, and more."}
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 max-w-lg">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 max-w-lg"
+        data-testid="chat-suggestions"
+      >
         {suggestions.map((suggestion) => (
           <button
             key={suggestion}
             onClick={() => onSelect(suggestion)}
             className="text-left text-sm p-3 rounded-lg border border-border/40 hover:border-border transition-colors"
+            data-testid="chat-suggestion-btn"
           >
             {suggestion}
           </button>
