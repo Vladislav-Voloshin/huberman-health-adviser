@@ -18,26 +18,34 @@ test.describe("Protocol Favorites", () => {
     const firstHeart = page.locator("main button[aria-label*='favorites']").first();
     await expect(firstHeart).toBeVisible();
 
-    // Click to favorite — wait for API round-trip
-    await firstHeart.click();
-    await expect(firstHeart).not.toBeDisabled({ timeout: 10000 });
+    // Click to favorite — wait for API response
+    const [favResponse] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/api/protocols/favorites") && r.status() === 200),
+      firstHeart.click(),
+    ]);
+    expect(favResponse.ok()).toBe(true);
     await expect(firstHeart).toHaveAttribute("aria-label", "Remove from favorites", { timeout: 10000 });
 
-    // Click to unfavorite
-    await firstHeart.click();
-    await expect(firstHeart).not.toBeDisabled({ timeout: 10000 });
+    // Click to unfavorite — wait for API response
+    const [unfavResponse] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/api/protocols/favorites") && r.status() === 200),
+      firstHeart.click(),
+    ]);
+    expect(unfavResponse.ok()).toBe(true);
     await expect(firstHeart).toHaveAttribute("aria-label", "Add to favorites", { timeout: 10000 });
   });
 
   test("favorites filter shows only favorited protocols", async ({ page }) => {
-    // Favorite the first protocol
+    // Favorite the first protocol — wait for API
     const firstHeart = page.locator("main button[aria-label*='favorites']").first();
-    await firstHeart.click();
-    await expect(firstHeart).not.toBeDisabled({ timeout: 10000 });
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/api/protocols/favorites") && r.status() === 200),
+      firstHeart.click(),
+    ]);
     await expect(firstHeart).toHaveAttribute("aria-label", "Remove from favorites", { timeout: 10000 });
 
     // Click Favorites filter
-    const favoritesFilter = page.getByRole("button", { name: "Favorites" });
+    const favoritesFilter = page.getByRole("button", { name: "Favorites", exact: true });
     await expect(favoritesFilter).toBeVisible();
     await favoritesFilter.click();
 
@@ -71,14 +79,20 @@ test.describe("Protocol Favorites", () => {
     const heartButton = page.locator("button[aria-label*='favorites']");
     await expect(heartButton).toBeVisible();
 
-    // Toggle favorite — wait for API round-trip
-    await heartButton.click();
-    await expect(heartButton).not.toBeDisabled({ timeout: 10000 });
+    // Toggle favorite — wait for API response
+    const [favRes] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/api/protocols/favorites") && r.status() === 200),
+      heartButton.click(),
+    ]);
+    expect(favRes.ok()).toBe(true);
     await expect(heartButton).toHaveAttribute("aria-label", "Remove from favorites", { timeout: 10000 });
 
-    // Toggle unfavorite
-    await heartButton.click();
-    await expect(heartButton).not.toBeDisabled({ timeout: 10000 });
+    // Toggle unfavorite — wait for API response
+    const [unfavRes] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes("/api/protocols/favorites") && r.status() === 200),
+      heartButton.click(),
+    ]);
+    expect(unfavRes.ok()).toBe(true);
     await expect(heartButton).toHaveAttribute("aria-label", "Add to favorites", { timeout: 10000 });
   });
 });
