@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSyncExternalStore } from "react";
-import { TourOverlay } from "@/components/tour/tour-overlay";
+
+const TourOverlay = dynamic(
+  () => import("@/components/tour/tour-overlay").then((m) => m.TourOverlay),
+  { ssr: false }
+);
 
 const navItems = [
   { href: "/protocols", label: "Protocols", icon: "📋", tourId: "protocols-nav" },
