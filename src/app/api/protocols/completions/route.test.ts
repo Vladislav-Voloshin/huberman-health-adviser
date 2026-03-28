@@ -1,37 +1,12 @@
 /**
- * Integration-style tests for the completions API route logic.
- * Tests the pure helper functions (getLocalToday, daysBetween) extracted
- * from the route handlers, and the body validation schema.
+ * Tests for completions API route — date utils and schemas imported from source.
  */
-import { z } from "zod";
+import { getLocalDate, daysBetween } from "@/lib/api/date-utils";
+import { completionSchema } from "@/lib/api/schemas";
 
-// Re-implement the pure functions from the route to test them in isolation.
-// These match the implementations in route.ts exactly.
-
-function getLocalToday(url: string): string {
-  const offsetStr = new URL(url).searchParams.get("tz_offset");
-  const offsetMinutes = offsetStr ? parseInt(offsetStr, 10) : 0;
-  const now = new Date();
-  const local = new Date(now.getTime() - offsetMinutes * 60000);
-  return local.toISOString().split("T")[0];
-}
-
-function daysBetween(a: string, b: string): number {
-  const msA = Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10));
-  const msB = Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10));
-  return Math.round((msA - msB) / 86400000);
-}
-
-const completionSchema = z.object({
-  protocol_id: z.string().uuid(),
-  tool_id: z.string().uuid(),
-  tz_offset: z.number().int().min(-720).max(720).optional(),
-});
-
-describe("getLocalToday", () => {
+describe("getLocalDate", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    // Set to 2026-03-28T15:00:00Z
     vi.setSystemTime(new Date("2026-03-28T15:00:00Z"));
   });
 
@@ -39,32 +14,25 @@ describe("getLocalToday", () => {
     vi.useRealTimers();
   });
 
-  it("returns UTC date when no tz_offset param", () => {
-    const result = getLocalToday("http://localhost/api/test");
-    expect(result).toBe("2026-03-28");
+  it("returns UTC date when no offset", () => {
+    expect(getLocalDate(0)).toBe("2026-03-28");
   });
 
   it("adjusts date for negative offset (ahead of UTC, e.g. Asia)", () => {
-    // tz_offset = -540 means UTC+9 (Japan)
-    // 15:00 UTC = 00:00 next day in UTC+9
-    const result = getLocalToday("http://localhost/api/test?tz_offset=-540");
-    expect(result).toBe("2026-03-29");
+    expect(getLocalDate(-540)).toBe("2026-03-29");
   });
 
   it("adjusts date for positive offset (behind UTC, e.g. US West)", () => {
-    // tz_offset = 420 means UTC-7 (PDT)
-    // 15:00 UTC = 08:00 same day in PDT
-    const result = getLocalToday("http://localhost/api/test?tz_offset=420");
-    expect(result).toBe("2026-03-28");
+    expect(getLocalDate(420)).toBe("2026-03-28");
   });
 
   it("handles midnight boundary correctly", () => {
-    // Set to 2026-03-28T02:00:00Z
     vi.setSystemTime(new Date("2026-03-28T02:00:00Z"));
-    // tz_offset = 300 means UTC-5 (EST)
-    // 02:00 UTC = 21:00 previous day in EST
-    const result = getLocalToday("http://localhost/api/test?tz_offset=300");
-    expect(result).toBe("2026-03-27");
+    expect(getLocalDate(300)).toBe("2026-03-27");
+  });
+
+  it("returns same date with default offset", () => {
+    expect(getLocalDate()).toBe("2026-03-28");
   });
 });
 
@@ -90,7 +58,7 @@ describe("daysBetween", () => {
   });
 
   it("handles leap year", () => {
-    expect(daysBetween("2024-03-01", "2024-02-28")).toBe(2); // Feb 29 exists in 2024
+    expect(daysBetween("2024-03-01", "2024-02-28")).toBe(2);
   });
 
   it("handles large gaps", () => {
