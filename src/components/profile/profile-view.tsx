@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ProfileEditor } from "./profile-editor";
+import { Achievements } from "./achievements";
 import { ExportButton } from "@/components/protocols/export-button";
 import type { SurveyResponse } from "@/lib/types/database";
 
@@ -293,6 +294,8 @@ export function ProfileView({
           </CardContent>
         </Card>
       )}
+
+      <Achievements />
 
       <div className="flex gap-2">
         <ExportButton />
