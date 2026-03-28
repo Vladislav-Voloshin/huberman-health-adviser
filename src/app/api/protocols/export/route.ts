@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Get all completions with protocol and tool info
     const { data: completions } = await supabase
       .from("protocol_completions")
-      .select("completed_date, protocol_id, tool_id, protocols(title), protocol_tools(name)")
+      .select("completed_date, protocol_id, tool_id, protocols(title), protocol_tools(title)")
       .eq("user_id", user.id)
       .order("completed_date", { ascending: false });
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     const rows = completions.map((c) => {
       const protocol = (c.protocols as unknown as { title: string })?.title || "Unknown";
-      const tool = (c.protocol_tools as unknown as { name: string })?.name || "Unknown";
+      const tool = (c.protocol_tools as unknown as { title: string })?.title || "Unknown";
       // Escape CSV fields that might contain commas or quotes
       const escapeField = (s: string) => {
         if (s.includes(",") || s.includes('"') || s.includes("\n")) {
