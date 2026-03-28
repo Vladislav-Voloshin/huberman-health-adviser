@@ -39,17 +39,19 @@ const STORAGE_KEY = "craftwell_tour_completed";
 
 export function TourOverlay({ show }: { show?: boolean }) {
   const [step, setStep] = useState(0);
-  const [visible, setVisible] = useState(false);
+  const [delayComplete, setDelayComplete] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (show && !localStorage.getItem(STORAGE_KEY)) {
-      const timer = setTimeout(() => setVisible(true), 800);
+      const timer = setTimeout(() => setDelayComplete(true), 800);
       return () => clearTimeout(timer);
     }
-    setVisible(false);
   }, [show]);
+
+  const visible = !!show && delayComplete && !dismissed;
 
   // Position tooltip and ring via refs (no setState in effect)
   useEffect(() => {
@@ -102,7 +104,7 @@ export function TourOverlay({ show }: { show?: boolean }) {
 
   function completeTour() {
     localStorage.setItem(STORAGE_KEY, "true");
-    setVisible(false);
+    setDismissed(true);
   }
 
   if (!visible) return null;
