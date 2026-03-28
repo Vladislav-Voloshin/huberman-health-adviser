@@ -72,3 +72,4 @@ test.describe("Onboarding Tour", () => {
     await expect(tourTooltip).not.toBeVisible();
   });
 });
+
