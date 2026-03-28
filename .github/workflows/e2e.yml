@@ -33,15 +33,15 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Apply database migrations
-        if: ${{ secrets.SUPABASE_DB_URL != '' }}
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
         run: |
-          sudo apt-get install -y -qq postgresql-client > /dev/null 2>&1
+          npx supabase link --project-ref xoybijzmusbzpgzfvppu
           for f in supabase/migrations/*.sql; do
             echo "Applying $f..."
-            psql "$SUPABASE_DB_URL" -f "$f" 2>&1 | tail -3 || echo "  (already applied or skipped)"
+            npx supabase db query --linked "$(cat "$f")" 2>&1 | tail -3 || echo "  (already applied or skipped)"
           done
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Build application
         run: npm run build
