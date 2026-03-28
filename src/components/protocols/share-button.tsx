@@ -14,8 +14,10 @@ export function ShareButton({ title }: { title: string }) {
       try {
         await navigator.share({ title, url });
         return;
-      } catch {
-        // User cancelled or share API failed — fall through to clipboard
+      } catch (err) {
+        // User cancelled the share sheet — treat as no-op
+        if (err instanceof Error && err.name === "AbortError") return;
+        // Genuine error — fall through to clipboard fallback
       }
     }
 
