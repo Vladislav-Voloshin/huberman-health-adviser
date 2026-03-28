@@ -11,8 +11,8 @@
 
 ```bash
 # Clone and install
-git clone https://github.com/Vladislav-Voloshin/huberman-health-adviser.git
-cd huberman-health-adviser
+git clone https://github.com/Vladislav-Voloshin/craftwell-health-adviser.git
+cd craftwell-health-adviser
 npm install
 
 # Set up environment
