@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
 import { getRequestId } from "@/lib/api/request-id";
+import { coreEnv } from "@/lib/env";
 import { z } from "zod";
+
+/**
+ * Lightweight admin client that only requires Supabase keys —
+ * avoids importing getSupabaseAdmin which pulls in the full
+ * AI/ingestion env (ANTHROPIC_API_KEY, PINECONE_API_KEY, etc.).
+ */
+function getAdminClient() {
+  const { NEXT_PUBLIC_SUPABASE_URL } = coreEnv();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+  }
+  return createSupabaseClient(NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey);
+}
 
 const profileUpdateSchema = z.object({
   profile: z.object({
@@ -86,6 +102,73 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ status: "ok", ...results });
+  } catch (err) {
+    return handleApiError(err, requestId);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const requestId = getRequestId(request);
+  try {
+    const { user, supabase } = await requireAuth();
+
+    // ── 1. Delete auth user FIRST via service-role client ──
+    // If this fails the user's application data stays intact and they
+    // can still sign in — much safer than deleting data first and
+    // leaving an orphaned auth account.
+    const admin = getAdminClient();
+    const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+
+    if (authError) {
+      return apiError(authError.message, 500);
+    }
+
+    // ── 2. Delete application data (child → parent for FK order) ──
+    // Protocol completions
+    await supabase
+      .from("protocol_completions")
+      .delete()
+      .eq("user_id", user.id);
+
+    // User protocols
+    await supabase
+      .from("user_protocols")
+      .delete()
+      .eq("user_id", user.id);
+
+    // Chat messages (via sessions)
+    const { data: sessions } = await supabase
+      .from("chat_sessions")
+      .select("id")
+      .eq("user_id", user.id);
+
+    if (sessions && sessions.length > 0) {
+      const sessionIds = sessions.map((s) => s.id);
+      await supabase
+        .from("chat_messages")
+        .delete()
+        .in("session_id", sessionIds);
+    }
+
+    // Chat sessions
+    await supabase
+      .from("chat_sessions")
+      .delete()
+      .eq("user_id", user.id);
+
+    // Survey responses
+    await supabase
+      .from("survey_responses")
+      .delete()
+      .eq("user_id", user.id);
+
+    // User profile row
+    await supabase
+      .from("users")
+      .delete()
+      .eq("id", user.id);
+
+    return NextResponse.json({ status: "deleted" });
   } catch (err) {
     return handleApiError(err, requestId);
   }

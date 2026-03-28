@@ -4,9 +4,13 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
+} from "@/components/ui/dialog";
 import { ProfileEditor } from "./profile-editor";
 import { Achievements } from "./achievements";
 import { ExportButton } from "@/components/protocols/export-button";
@@ -50,6 +54,10 @@ export function ProfileView({
   const [profile, setProfile] = useState(initialProfile);
   const [survey, setSurvey] = useState(initialSurvey);
   const [editing, setEditing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [streaks, setStreaks] = useState<{ protocol_title: string; streak: number; longest_streak: number; total_days: number }[]>([]);
 
   const fetchStreaks = useCallback(async () => {
@@ -72,12 +80,30 @@ export function ProfileView({
     setStreaks(results);
   }, [activeProtocols]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchStreaks is async; setState happens in a callback, not synchronously
   useEffect(() => { fetchStreaks(); }, [fetchStreaks]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push("/");
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/profile", { method: "DELETE" });
+      if (res.ok) {
+        await supabase.auth.signOut();
+        window.location.href = "/auth";
+      } else {
+        const data = await res.json();
+        setDeleteError(data.error || "Failed to delete account");
+      }
+    } catch {
+      setDeleteError("Something went wrong. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function handleSave(updatedProfile: ProfileData, updatedSurvey: SurveyData) {
@@ -303,6 +329,65 @@ export function ProfileView({
           Sign Out
         </Button>
       </div>
+
+      <Separator />
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Permanently delete your account and all associated data including chat history,
+            protocol progress, and health profile. This action cannot be undone.
+          </p>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => { setDeleteDialogOpen(true); setDeleteConfirm(""); setDeleteError(""); }}
+          >
+            Delete Account
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete your account?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete all your data: chat sessions, protocol progress,
+              health survey, and profile. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm">
+              Type <strong>DELETE</strong> to confirm:
+            </p>
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="font-mono"
+            />
+            {deleteError && (
+              <p className="text-sm text-destructive">{deleteError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirm !== "DELETE" || deleting}
+              onClick={handleDeleteAccount}
+            >
+              {deleting ? "Deleting..." : "Permanently Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
