@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, handleApiError } from "@/lib/api/helpers";
+import { getRequestId } from "@/lib/api/request-id";
 
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const { user, supabase } = await requireAuth();
 
@@ -40,6 +42,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ sessions: sessions || [] });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }

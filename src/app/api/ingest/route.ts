@@ -5,8 +5,13 @@ import { runNewsletterScraper } from "@/lib/ingestion/newsletter-scraper";
 import { chunkPodcastEpisodes, chunkNewsletters } from "@/lib/ingestion/chunker";
 import { runFullEmbeddingPipeline } from "@/lib/ingestion/embed-pipeline";
 import { runProtocolExtraction } from "@/lib/ingestion/protocol-extractor";
+import { getRequestId } from "@/lib/api/request-id";
+import logger from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
+  const log = logger.child({ requestId, route: "POST /api/ingest" });
+
   // Simple API key auth for admin operations
   const authHeader = request.headers.get("authorization");
   const { ADMIN_API_KEY: adminKey } = serverEnv();
@@ -75,7 +80,7 @@ export async function POST(request: NextRequest) {
         );
     }
   } catch (error) {
-    console.error("Ingestion error:", error);
+    log.error({ err: error }, "Ingestion error");
     return NextResponse.json(
       {
         error: process.env.NODE_ENV === "production"

@@ -4,6 +4,8 @@ import { queryVectors } from "@/lib/pinecone/client";
 import { getEmbedding, getAnthropicClient } from "@/lib/pinecone/embeddings";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { z } from "zod";
+import { getRequestId } from "@/lib/api/request-id";
+import logger from "@/lib/logger";
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_HISTORY_TURNS = 20;
@@ -15,8 +17,12 @@ const chatSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
+  const log = logger.child({ requestId, route: "POST /api/chat" });
+
   try {
     const { user, supabase } = await requireAuth();
+    log.info({ userId: user.id }, "Chat request received");
 
     const rateLimited = await checkRateLimit(user.id, supabase);
     if (rateLimited) return rateLimited;
@@ -53,14 +59,14 @@ export async function POST(request: NextRequest) {
       content: trimmedMessage,
     });
     if (insertErr) {
-      console.error("[Chat] Failed to save user message:", insertErr.message);
+      log.error({ err: insertErr }, "Failed to save user message");
     }
 
     // Fetch conversation history for multi-turn context
     const history = await fetchConversationHistory(supabase, currentSessionId!);
 
     // Get relevant context via RAG
-    const { contextText, sources } = await fetchRAGContext(trimmedMessage);
+    const { contextText, sources } = await fetchRAGContext(trimmedMessage, log);
 
     // Build system prompt
     let systemPrompt = buildSystemPrompt(contextText);
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
           }
         } catch (err) {
           streamFailed = true;
-          console.error("[Chat] Stream error:", err instanceof Error ? err.message : err);
+          log.error({ err }, "Stream error");
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({ type: "error", error: "Failed to generate response" })}\n\n`
@@ -140,7 +146,7 @@ export async function POST(request: NextRequest) {
             sources: streamFailed ? undefined : sources,
           });
           if (saveErr) {
-            console.error("[Chat] Failed to save assistant message:", saveErr.message);
+            log.error({ err: saveErr }, "Failed to save assistant message");
           }
         }
 
@@ -150,7 +156,7 @@ export async function POST(request: NextRequest) {
           .update({ updated_at: new Date().toISOString() })
           .eq("id", currentSessionId);
         if (updateErr) {
-          console.error("[Chat] Failed to update session:", updateErr.message);
+          log.error({ err: updateErr }, "Failed to update session timestamp");
         }
 
         controller.enqueue(
@@ -168,7 +174,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }
 
@@ -192,7 +198,7 @@ async function fetchConversationHistory(
 }
 
 /** Fetch RAG context from Pinecone for the given query. */
-async function fetchRAGContext(query: string) {
+async function fetchRAGContext(query: string, log: Pick<typeof logger, "warn">) {
   let contextText = "";
   let sources: { type: string; title: string; chunk_id: string }[] = [];
 
@@ -211,7 +217,7 @@ async function fetchRAGContext(query: string) {
       .filter(Boolean)
       .join("\n\n---\n\n");
   } catch (err) {
-    console.warn("[Chat] RAG unavailable:", err instanceof Error ? err.message : err);
+    log.warn({ err }, "RAG unavailable");
   }
 
   return { contextText, sources };

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, handleApiError, parseBody } from "@/lib/api/helpers";
+import { getRequestId } from "@/lib/api/request-id";
 import { z } from "zod";
 
 const completionSchema = z.object({
@@ -18,6 +19,7 @@ function getLocalToday(request: NextRequest): string {
 }
 
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const { user, supabase } = await requireAuth();
 
@@ -48,11 +50,12 @@ export async function GET(request: NextRequest) {
       date: today,
     });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const { user, supabase } = await requireAuth();
 
@@ -97,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ status: "completed" });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, requestId);
   }
 }
 
