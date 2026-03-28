@@ -20,9 +20,23 @@ export async function generateMetadata({
 
   if (!protocol) return { title: "Protocol Not Found — Craftwell" };
 
+  const title = `${protocol.title} — Craftwell`;
+  const description = protocol.description || "Science-backed health protocol from Craftwell";
+
   return {
-    title: `${protocol.title} — Craftwell`,
-    description: protocol.description,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      siteName: "Craftwell",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 

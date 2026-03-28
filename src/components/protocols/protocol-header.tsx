@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/protocols/share-button";
 import type { StreaksResponse as StreakData } from "@/lib/types/database";
 
 export function ProtocolHeader({
@@ -43,11 +44,14 @@ export function ProtocolHeader({
           </Badge>
         )}
       </div>
-      {isLoggedIn && (
-        <Button onClick={onToggleProtocol} disabled={loading} variant={isActive ? "outline" : "default"} className="mt-2">
-          {loading ? "..." : isActive ? "Remove from My Protocols" : "Add to My Protocols"}
-        </Button>
-      )}
+      <div className="flex gap-2 mt-2">
+        {isLoggedIn && (
+          <Button onClick={onToggleProtocol} disabled={loading} variant={isActive ? "outline" : "default"}>
+            {loading ? "..." : isActive ? "Remove from My Protocols" : "Add to My Protocols"}
+          </Button>
+        )}
+        <ShareButton title={title} />
+      </div>
     </div>
   );
 }
