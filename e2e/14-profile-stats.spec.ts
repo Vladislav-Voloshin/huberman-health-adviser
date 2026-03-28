@@ -6,12 +6,12 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { signInTestUser, TEST_USER } from "./helpers";
+import { signInTestUser, gotoAuthenticated, TEST_USER } from "./helpers";
 
 test.describe("Profile Stats & Streaks", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/profile");
+    await gotoAuthenticated(page, "/profile");
     // Wait for the profile to fully render (not just the loading skeleton)
     await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });

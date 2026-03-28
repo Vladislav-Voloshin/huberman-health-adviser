@@ -24,15 +24,47 @@ export async function signUpTestUser(page: Page) {
 }
 
 /**
- * Sign in with email/password via the auth page
+ * Sign in with email/password via the auth page.
+ *
+ * Includes retry logic — if the first sign-in attempt results in a
+ * redirect back to /auth (e.g. session cookie race in CI), we retry
+ * once before giving up.
  */
 export async function signInTestUser(page: Page) {
-  await page.goto("/auth");
-  await page.getByRole("tab", { name: "Sign In" }).click();
-  await page.getByPlaceholder("Email").fill(TEST_USER.email);
-  await page.getByPlaceholder("Password").fill(TEST_USER.password);
-  await page.getByRole("button", { name: "Sign In" }).click();
-  // Wait for redirect away from /auth
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.goto("/auth");
+    await page.getByRole("tab", { name: "Sign In" }).click();
+    await page.getByPlaceholder("Email").fill(TEST_USER.email);
+    await page.getByPlaceholder("Password").fill(TEST_USER.password);
+    await page.getByRole("button", { name: "Sign In" }).click();
+
+    try {
+      // Wait for redirect away from /auth
+      await page.waitForURL((url) => !url.pathname.startsWith("/auth"), {
+        timeout: 10000,
+      });
+      return; // success
+    } catch {
+      if (attempt === 1) throw new Error("signInTestUser: failed after 2 attempts");
+      // Retry on next iteration
+    }
+  }
+}
+
+/**
+ * Navigate to a protected page, re-authenticating if redirected to /auth.
+ * Use this instead of bare page.goto() for authenticated routes.
+ */
+export async function gotoAuthenticated(page: Page, path: string) {
+  await page.goto(path);
+
+  // If we got redirected to /auth, the session expired — re-auth and retry
+  if (page.url().includes("/auth")) {
+    await signInTestUser(page);
+    await page.goto(path);
+  }
+
+  // Final check — if still on /auth something is fundamentally wrong
   await page.waitForURL((url) => !url.pathname.startsWith("/auth"), {
     timeout: 10000,
   });

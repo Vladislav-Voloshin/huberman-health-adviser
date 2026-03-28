@@ -5,12 +5,12 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { signInTestUser, TEST_USER } from "./helpers";
+import { signInTestUser, gotoAuthenticated, TEST_USER } from "./helpers";
 
 test.describe("Profile Page", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/profile");
+    await gotoAuthenticated(page, "/profile");
     // Wait for the profile to fully render (not just the loading skeleton)
     await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });
@@ -55,7 +55,7 @@ test.describe("Profile Page", () => {
 test.describe("Delete Account", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/profile");
+    await gotoAuthenticated(page, "/profile");
     // Wait for the profile to fully render (not just the loading skeleton)
     await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });
@@ -91,7 +91,7 @@ test.describe("Delete Account", () => {
 test.describe("Profile Navigation", () => {
   test("bottom nav Profile link navigates to profile", async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/protocols");
+    await gotoAuthenticated(page, "/protocols");
     await page.waitForLoadState("domcontentloaded");
 
     // Click profile in bottom nav (👤 icon or "Profile" text)

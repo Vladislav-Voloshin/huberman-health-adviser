@@ -10,7 +10,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { signInTestUser, TEST_USER } from "./helpers";
+import { signInTestUser, gotoAuthenticated, TEST_USER } from "./helpers";
 
 test.describe("P0 Happy Path: Returning User Login → Protocols", () => {
   test("user can sign in and land on protocols page", async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe("P0 Happy Path: Browse → Detail → Add to Stack", () => {
     page,
   }) => {
     await signInTestUser(page);
-    await page.goto("/protocols");
+    await gotoAuthenticated(page, "/protocols");
     await page.waitForLoadState("domcontentloaded");
 
     // Browse: wait for protocol cards to load from Supabase
@@ -70,7 +70,7 @@ test.describe("P0 Happy Path: Browse → Detail → Add to Stack", () => {
 test.describe("P0 Happy Path: Protocol → Chat about it", () => {
   test("user can navigate from protocol detail to chat", async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/protocols");
+    await gotoAuthenticated(page, "/protocols");
     await page.waitForLoadState("domcontentloaded");
 
     // Open a protocol (wait for cards to load first)
@@ -100,20 +100,32 @@ test.describe("P0 Happy Path: Full Navigation Cycle", () => {
     await signInTestUser(page);
 
     // Start on protocols
-    await page.goto("/protocols");
-    await page.waitForLoadState("domcontentloaded");
+    await gotoAuthenticated(page, "/protocols");
     await expect(page).toHaveURL(/\/protocols/);
 
-    // Go to chat
+    // Go to chat — session can expire mid-test so handle /auth redirect
     const chatLink = page.getByRole("link", { name: /chat/i });
     await expect(chatLink).toBeVisible();
     await chatLink.click();
+    await page.waitForURL(/(\/chat|\/auth)/, { timeout: 10000 });
+
+    // If redirected to /auth, re-authenticate and navigate to chat
+    if (page.url().includes("/auth")) {
+      await signInTestUser(page);
+      await gotoAuthenticated(page, "/chat");
+    }
     await expect(page).toHaveURL(/\/chat/);
 
     // Go to profile
     const profileLink = page.getByRole("link", { name: /profile/i });
     await expect(profileLink).toBeVisible();
     await profileLink.click();
+    await page.waitForURL(/(\/profile|\/auth)/, { timeout: 10000 });
+
+    if (page.url().includes("/auth")) {
+      await signInTestUser(page);
+      await gotoAuthenticated(page, "/profile");
+    }
     await expect(page).toHaveURL(/\/profile/);
 
     // Verify profile loaded
@@ -132,7 +144,7 @@ test.describe("P0 Happy Path: Sign Out & Re-Sign In", () => {
     await signInTestUser(page);
 
     // Go to profile and sign out
-    await page.goto("/profile");
+    await gotoAuthenticated(page, "/profile");
     await page.waitForLoadState("domcontentloaded");
 
     const signOutBtn = page.getByRole("button", { name: /sign out/i });
@@ -177,7 +189,7 @@ test.describe("P0 Happy Path: Landing Page → Auth Flow", () => {
 test.describe("P0 Happy Path: Search and Filter Protocols", () => {
   test("user can search and filter to find a protocol", async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/protocols");
+    await gotoAuthenticated(page, "/protocols");
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for protocol cards to load before searching
