@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { ProfileEditor } from "./profile-editor";
+import { ExportButton } from "@/components/protocols/export-button";
 import type { SurveyResponse } from "@/lib/types/database";
 
 interface UserProtocol {
@@ -319,9 +320,12 @@ export function ProfileView({
         </Card>
       )}
 
-      <Button variant="outline" onClick={handleSignOut} className="w-full">
-        Sign Out
-      </Button>
+      <div className="flex gap-2">
+        <ExportButton />
+        <Button variant="outline" onClick={handleSignOut} className="flex-1">
+          Sign Out
+        </Button>
+      </div>
 
       <Separator />
 

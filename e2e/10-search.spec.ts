@@ -14,7 +14,7 @@ test.describe("Protocol Search", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
     // Wait for protocol cards to load from Supabase
-    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+    await page.locator("main a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
   });
 
   test("shows search input on protocols page", async ({ page }) => {
@@ -23,17 +23,17 @@ test.describe("Protocol Search", () => {
   });
 
   test("search filters protocols by title", async ({ page }) => {
-    const allCards = await page.locator("a[href^='/protocols/']").count();
+    const allCards = await page.locator("main a[href^='/protocols/']").count();
     expect(allCards).toBeGreaterThan(0);
 
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("sleep");
     // Wait for debounce to filter results
     await page.waitForFunction(
-      () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+      () => document.querySelectorAll("main a[href^='/protocols/']").length > 0
     );
 
-    const filteredCards = await page.locator("a[href^='/protocols/']").count();
+    const filteredCards = await page.locator("main a[href^='/protocols/']").count();
     expect(filteredCards).toBeGreaterThan(0);
     expect(filteredCards).toBeLessThanOrEqual(allCards);
   });
@@ -43,32 +43,32 @@ test.describe("Protocol Search", () => {
     await searchInput.fill("xyznonexistent12345");
     // Wait for debounce to filter — expect zero results
     await page.waitForFunction(
-      () => document.querySelectorAll("a[href^='/protocols/']").length === 0
+      () => document.querySelectorAll("main a[href^='/protocols/']").length === 0
     );
 
-    const cards = await page.locator("a[href^='/protocols/']").count();
+    const cards = await page.locator("main a[href^='/protocols/']").count();
     expect(cards).toBe(0);
   });
 
   test("clearing search restores all protocols", async ({ page }) => {
-    const allCards = await page.locator("a[href^='/protocols/']").count();
+    const allCards = await page.locator("main a[href^='/protocols/']").count();
 
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("sleep");
     // Wait for debounce to filter results
     await page.waitForFunction(
-      () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+      () => document.querySelectorAll("main a[href^='/protocols/']").length > 0
     );
 
     // Clear the search
     await searchInput.fill("");
     // Wait for all protocols to be restored
     await page.waitForFunction(
-      (expected) => document.querySelectorAll("a[href^='/protocols/']").length === expected,
+      (expected) => document.querySelectorAll("main a[href^='/protocols/']").length === expected,
       allCards
     );
 
-    const restoredCards = await page.locator("a[href^='/protocols/']").count();
+    const restoredCards = await page.locator("main a[href^='/protocols/']").count();
     expect(restoredCards).toBe(allCards);
   });
 
@@ -79,21 +79,21 @@ test.describe("Protocol Search", () => {
     await sleepButton.click();
     // Wait for category filter to apply
     await page.waitForFunction(
-      () => document.querySelectorAll("a[href^='/protocols/']").length > 0
+      () => document.querySelectorAll("main a[href^='/protocols/']").length > 0
     );
 
-    const categoryCards = await page.locator("a[href^='/protocols/']").count();
+    const categoryCards = await page.locator("main a[href^='/protocols/']").count();
 
     // Now also search
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("morning");
     // Wait for debounce to apply combined filter
     await page.waitForFunction(
-      (max) => document.querySelectorAll("a[href^='/protocols/']").length <= max,
+      (max) => document.querySelectorAll("main a[href^='/protocols/']").length <= max,
       categoryCards
     );
 
-    const combinedCards = await page.locator("a[href^='/protocols/']").count();
+    const combinedCards = await page.locator("main a[href^='/protocols/']").count();
     expect(combinedCards).toBeLessThanOrEqual(categoryCards);
   });
 });

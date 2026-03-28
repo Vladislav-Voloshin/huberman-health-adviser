@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProtocolList } from "@/components/protocols/protocol-list";
+import { StreakSummary } from "@/components/protocols/streak-summary";
 
 export const metadata: Metadata = {
   title: "Protocols — Craftwell",
@@ -93,6 +94,7 @@ export default async function ProtocolsPage() {
               : "Evidence-based tools ranked by effectiveness"}
           </p>
         </div>
+        {!!user && <StreakSummary />}
         <ProtocolList
           categories={categories || []}
           protocols={sortedProtocols}

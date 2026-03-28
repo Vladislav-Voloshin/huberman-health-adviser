@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,15 @@ export const metadata: Metadata = {
   title: "Craftwell — Science-Based Health Protocols",
   description:
     "Evidence-based health protocols ranked by effectiveness. Build your optimal routine with science-backed tools for sleep, focus, exercise, and more.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Craftwell",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +43,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
+          <RegisterServiceWorker />
         </ThemeProvider>
       </body>
     </html>
