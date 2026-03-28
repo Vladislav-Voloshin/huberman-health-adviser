@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { z } from "zod";
+import * as Sentry from "@sentry/nextjs";
 import logger from "@/lib/logger";
 
 /**
@@ -66,6 +67,7 @@ export function handleApiError(err: unknown, requestId?: string) {
     return apiError("Unauthorized", 401);
   }
   const message = err instanceof Error ? err.message : String(err);
+  Sentry.captureException(err, { extra: { requestId } });
   logger.error({ err, requestId }, "API error");
   return apiError(
     process.env.NODE_ENV === "production"
