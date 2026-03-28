@@ -22,6 +22,9 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
 
   // Profile fields
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  const [firstName, setFirstName] = useState(profile?.first_name || "");
+  const [lastName, setLastName] = useState(profile?.last_name || "");
+  const [age, setAge] = useState<number | "">(profile?.age ?? "");
 
   // Survey fields
   const [healthGoals, setHealthGoals] = useState<string[]>(survey?.health_goals || []);
@@ -44,6 +47,9 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
         body: JSON.stringify({
           profile: {
             display_name: displayName || null,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            age: age === "" ? null : Number(age),
           },
           survey: {
             health_goals: healthGoals,
@@ -66,7 +72,13 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
       setSuccess(true);
       setTimeout(() => {
         onSave(
-          { ...profile!, display_name: displayName || null },
+          {
+            ...profile!,
+            display_name: displayName || null,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            age: age === "" ? null : Number(age),
+          },
           {
             health_goals: healthGoals,
             sleep_quality: sleepQuality,
@@ -107,6 +119,40 @@ export function ProfileEditor({ profile, survey, onSave, onCancel }: ProfileEdit
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Your name"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">First Name</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1">Last Name</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground block mb-1">Age</label>
+            <input
+              type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
+              placeholder="Your age"
+              min={1}
+              max={150}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>

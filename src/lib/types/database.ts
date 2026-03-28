@@ -64,6 +64,9 @@ export interface User {
   email: string;
   phone: string | null;
   display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  age: number | null;
   avatar_url: string | null;
   onboarding_completed: boolean;
   created_at: string;
