@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Search, X } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Heart, Search, X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { FavoriteButton } from "./favorite-button";
 import type { Protocol, ProtocolCategoryRecord as ProtocolCategory } from "@/lib/types/database";
 
 const categoryMeta: Record<string, { icon: string; accent: string; bg: string }> = {
@@ -52,14 +53,32 @@ function DifficultyDots({ difficulty }: { difficulty: string }) {
 export function ProtocolList({
   categories,
   protocols,
+  favoriteIds = [],
+  isLoggedIn = false,
 }: {
   categories: ProtocolCategory[];
   protocols: Protocol[];
+  favoriteIds?: string[];
+  isLoggedIn?: boolean;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showFavorites, setShowFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clientFavoriteIds, setClientFavoriteIds] = useState<Set<string>>(
+    () => new Set(favoriteIds)
+  );
+
+  const onFavoriteChange = useCallback((protocolId: string, favorited: boolean) => {
+    setClientFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (favorited) next.add(protocolId);
+      else next.delete(protocolId);
+      return next;
+    });
+  }, []);
 
   const filtered = protocols.filter((p) => {
+    if (showFavorites && !clientFavoriteIds.has(p.id)) return false;
     if (selectedCategory && p.category !== selectedCategory) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -97,16 +116,30 @@ export function ProtocolList({
       {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         <button
-          onClick={() => setSelectedCategory(null)}
+          onClick={() => { setSelectedCategory(null); setShowFavorites(false); }}
           className={cn(
             "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors",
-            !selectedCategory
+            !selectedCategory && !showFavorites
               ? "bg-primary text-primary-foreground border-primary"
               : "border-border hover:border-foreground/30"
           )}
         >
           All
         </button>
+        {isLoggedIn && (
+          <button
+            onClick={() => { setShowFavorites(!showFavorites); setSelectedCategory(null); }}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors flex items-center gap-1",
+              showFavorites
+                ? "bg-rose-500 text-white border-rose-500"
+                : "border-border hover:border-foreground/30"
+            )}
+          >
+            <Heart className={cn("w-3 h-3", showFavorites ? "fill-current" : "")} />
+            Favorites
+          </button>
+        )}
         {categories.map((cat) => (
           <button
             key={cat.slug}
@@ -181,6 +214,12 @@ export function ProtocolList({
                               </div>
                             </div>
                           </div>
+                          <FavoriteButton
+                            protocolId={protocol.id}
+                            initialFavorited={clientFavoriteIds.has(protocol.id)}
+                            isLoggedIn={isLoggedIn}
+                            onToggle={onFavoriteChange}
+                          />
                         </div>
                         <CardDescription className="text-xs line-clamp-2 mt-1">
                           {protocol.description}

@@ -7,6 +7,7 @@ import { ProtocolProgress } from "./protocol-progress";
 import { ProtocolChecklist } from "./protocol-checklist";
 import { ProtocolChatCta } from "./protocol-chat-cta";
 import { ProtocolNotes } from "./protocol-notes";
+import { FavoriteButton } from "./favorite-button";
 import { useProtocolCompletions } from "./use-protocol-completions";
 import type { Protocol, ProtocolTool } from "@/lib/types/database";
 
@@ -14,11 +15,13 @@ export function ProtocolDetail({
   protocol,
   tools,
   isActive: initialActive = false,
+  isFavorited: initialFavorited = false,
   isLoggedIn = false,
 }: {
   protocol: Protocol;
   tools: ProtocolTool[];
   isActive?: boolean;
+  isFavorited?: boolean;
   isLoggedIn?: boolean;
 }) {
   const [isActive, setIsActive] = useState(initialActive);
@@ -50,17 +53,27 @@ export function ProtocolDetail({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-      <ProtocolHeader
-        title={protocol.title}
-        description={protocol.description}
-        difficulty={protocol.difficulty}
-        timeCommitment={protocol.time_commitment}
-        streakData={streakData}
-        isLoggedIn={isLoggedIn}
-        isActive={isActive}
-        loading={loading}
-        onToggleProtocol={toggleProtocol}
-      />
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <ProtocolHeader
+            title={protocol.title}
+            description={protocol.description}
+            difficulty={protocol.difficulty}
+            timeCommitment={protocol.time_commitment}
+            streakData={streakData}
+            isLoggedIn={isLoggedIn}
+            isActive={isActive}
+            loading={loading}
+            onToggleProtocol={toggleProtocol}
+          />
+        </div>
+        <FavoriteButton
+          protocolId={protocol.id}
+          initialFavorited={initialFavorited}
+          isLoggedIn={isLoggedIn}
+          size="md"
+        />
+      </div>
 
       <Separator />
 
