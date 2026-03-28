@@ -48,6 +48,7 @@ export function TourOverlay({ show }: { show?: boolean }) {
       const timer = setTimeout(() => setVisible(true), 800);
       return () => clearTimeout(timer);
     }
+    setVisible(false);
   }, [show]);
 
   // Position tooltip and ring via refs (no setState in effect)
