@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { z } from "zod";
 import logger from "@/lib/logger";
 
 /**
@@ -30,6 +31,28 @@ export class AuthError extends Error {
     super("Unauthorized");
     this.name = "AuthError";
   }
+}
+
+/** Parse and validate a JSON request body against a Zod schema.
+ *  Returns the parsed data or a 400 error Response. */
+export async function parseBody<T>(
+  request: NextRequest,
+  schema: z.ZodType<T>
+): Promise<T | Response> {
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return apiError("Invalid JSON body", 400);
+  }
+  const result = schema.safeParse(raw);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((i) => `${i.path.join(".")}: ${i.message}`)
+      .join("; ");
+    return apiError(`Validation error: ${issues}`, 400);
+  }
+  return result.data;
 }
 
 /** Consistent JSON error response. */
