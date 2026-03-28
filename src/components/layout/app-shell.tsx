@@ -6,12 +6,13 @@ import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSyncExternalStore } from "react";
+import { TourOverlay } from "@/components/tour/tour-overlay";
 
 const navItems = [
-  { href: "/protocols", label: "Protocols", icon: "📋" },
+  { href: "/protocols", label: "Protocols", icon: "📋", tourId: "protocols-nav" },
   { href: "/protocols/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/chat", label: "Chat", icon: "💬" },
-  { href: "/profile", label: "Profile", icon: "👤" },
+  { href: "/chat", label: "Chat", icon: "💬", tourId: "chat-nav" },
+  { href: "/profile", label: "Profile", icon: "👤", tourId: "profile-nav" },
 ];
 
 const emptySubscribe = () => () => {};
@@ -36,8 +37,13 @@ function ThemeToggle() {
   );
 }
 
+function getShowTour() {
+  return new URLSearchParams(window.location.search).get("tour") === "1";
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const showTour = useSyncExternalStore(emptySubscribe, getShowTour, () => false);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -55,6 +61,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Content */}
       <main className="flex-1 overflow-y-auto pb-16">{children}</main>
 
+      {/* Onboarding tour */}
+      <TourOverlay show={showTour} />
+
       {/* Bottom nav — fixed to bottom */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-sm px-4 py-2">
         <div className="max-w-lg mx-auto flex items-center justify-around">
@@ -62,6 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.tourId}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-xs transition-colors",
                 pathname.startsWith(item.href)
