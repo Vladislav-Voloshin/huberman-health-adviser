@@ -53,14 +53,24 @@ export default async function ProtocolDetailPage({
   } = await supabase.auth.getUser();
 
   let isActive = false;
+  let isFavorited = false;
   if (user) {
-    const { data: userProtocol } = await supabase
-      .from("user_protocols")
-      .select("is_active")
-      .eq("user_id", user.id)
-      .eq("protocol_id", protocol.id)
-      .maybeSingle();
+    const [{ data: userProtocol }, { data: favorite }] = await Promise.all([
+      supabase
+        .from("user_protocols")
+        .select("is_active")
+        .eq("user_id", user.id)
+        .eq("protocol_id", protocol.id)
+        .maybeSingle(),
+      supabase
+        .from("protocol_favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("protocol_id", protocol.id)
+        .maybeSingle(),
+    ]);
     isActive = userProtocol?.is_active ?? false;
+    isFavorited = !!favorite;
   }
 
   // Fetch related protocols (same category, excluding current)
@@ -78,6 +88,7 @@ export default async function ProtocolDetailPage({
         protocol={protocol}
         tools={tools || []}
         isActive={isActive}
+        isFavorited={isFavorited}
         isLoggedIn={!!user}
       />
       <div className="max-w-3xl mx-auto px-4 pb-6">

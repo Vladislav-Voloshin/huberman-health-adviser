@@ -78,6 +78,13 @@ export interface UserProtocol {
   is_active: boolean;
 }
 
+export interface ProtocolFavorite {
+  id: string;
+  user_id: string;
+  protocol_id: string;
+  created_at: string;
+}
+
 export interface UserProtocolWithDetails extends UserProtocol {
   protocols: Pick<
     Protocol,

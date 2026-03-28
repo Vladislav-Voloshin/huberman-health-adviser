@@ -44,9 +44,16 @@ export default async function ProtocolsPage() {
     supabase.auth.getUser(),
   ]);
 
-  // Fetch survey data for personalization (if logged in)
+  // Fetch survey data + favorites for personalization (if logged in)
   let userFocusCategories: string[] = [];
+  let favoriteIds: string[] = [];
   if (user) {
+    const { data: favorites } = await supabase
+      .from("protocol_favorites")
+      .select("protocol_id")
+      .eq("user_id", user.id);
+    favoriteIds = (favorites || []).map((f) => f.protocol_id);
+
     const { data: survey } = await supabase
       .from("survey_responses")
       .select("focus_areas, health_goals")
@@ -98,6 +105,8 @@ export default async function ProtocolsPage() {
         <ProtocolList
           categories={categories || []}
           protocols={sortedProtocols}
+          favoriteIds={favoriteIds}
+          isLoggedIn={!!user}
         />
       </div>
     </AppShell>
