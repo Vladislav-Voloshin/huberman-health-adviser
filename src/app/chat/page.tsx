@@ -23,11 +23,20 @@ export default async function ChatPage({
 
   const params = await searchParams;
 
-  const { data: sessions } = await supabase
-    .from("chat_sessions")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+  const [{ data: sessions }, { data: survey }] = await Promise.all([
+    supabase
+      .from("chat_sessions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("survey_responses")
+      .select("focus_areas, health_goals")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   return (
     <AppShell>
@@ -35,6 +44,8 @@ export default async function ChatPage({
         userId={user.id}
         sessions={sessions || []}
         initialProtocolId={params.protocol}
+        userFocusAreas={survey?.focus_areas ?? []}
+        userHealthGoals={survey?.health_goals ?? []}
       />
     </AppShell>
   );

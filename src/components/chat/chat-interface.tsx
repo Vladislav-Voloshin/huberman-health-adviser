@@ -16,10 +16,14 @@ export function ChatInterface({
   userId,
   sessions: initialSessions,
   initialProtocolId,
+  userFocusAreas = [],
+  userHealthGoals = [],
 }: {
   userId: string;
   sessions: ChatSession[];
   initialProtocolId?: string;
+  userFocusAreas?: string[];
+  userHealthGoals?: string[];
 }) {
   const {
     messages,
@@ -85,7 +89,11 @@ export function ChatInterface({
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-4" ref={scrollRef}>
           {messages.length === 0 ? (
-            <ChatSuggestions onSelect={setInput} />
+            <ChatSuggestions
+              onSelect={setInput}
+              focusAreas={userFocusAreas}
+              healthGoals={userHealthGoals}
+            />
           ) : (
             <ChatMessageList messages={messages} streamingId={streamingId} />
           )}
