@@ -227,6 +227,7 @@ export function useChatStream({ userId: _userId, initialSessions, initialProtoco
     setInput,
     loading,
     activeSession,
+    protocolId,
     streamingId,
     sessions,
     loadingSession,

@@ -72,14 +72,27 @@ export async function POST(request: NextRequest) {
     let systemPrompt = buildSystemPrompt(contextText);
 
     if (protocol_id) {
-      const { data: protocol } = await supabase
-        .from("protocols")
-        .select("title, description")
-        .eq("id", protocol_id)
-        .single();
+      const [{ data: protocol }, { data: tools }] = await Promise.all([
+        supabase
+          .from("protocols")
+          .select("title, description, category, difficulty, time_commitment")
+          .eq("id", protocol_id)
+          .single(),
+        supabase
+          .from("protocol_tools")
+          .select("name, description, effectiveness_rank")
+          .eq("protocol_id", protocol_id)
+          .order("effectiveness_rank"),
+      ]);
 
       if (protocol) {
-        systemPrompt += `\n\nThe user is asking about the "${protocol.title}" protocol: ${protocol.description}`;
+        const toolsList = tools?.length
+          ? `\nKey tools/steps:\n${tools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}`
+          : "";
+        systemPrompt += `\n\nThe user is asking about the "${protocol.title}" protocol.`
+          + `\nCategory: ${protocol.category} | Difficulty: ${protocol.difficulty} | Time: ${protocol.time_commitment}`
+          + `\nDescription: ${protocol.description}`
+          + toolsList;
       }
     }
 
