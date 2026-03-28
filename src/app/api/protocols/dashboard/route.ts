@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, apiError, handleApiError } from "@/lib/api/helpers";
+import { requireAuth, handleApiError } from "@/lib/api/helpers";
 import { getRequestId } from "@/lib/api/request-id";
 
 export async function GET(request: NextRequest) {
