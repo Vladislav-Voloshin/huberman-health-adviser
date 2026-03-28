@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ProfileEditor } from "./profile-editor";
+import { Achievements } from "./achievements";
 import type { SurveyResponse } from "@/lib/types/database";
 
 interface UserProtocol {
@@ -292,6 +293,8 @@ export function ProfileView({
           </CardContent>
         </Card>
       )}
+
+      <Achievements />
 
       <Button variant="outline" onClick={handleSignOut} className="w-full">
         Sign Out
