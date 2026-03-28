@@ -35,6 +35,8 @@ export function ChatInterface({
     loadSession,
     startNewChat,
     sendMessage,
+    renameSession,
+    deleteSession,
   } = useChatStream({ userId, initialSessions, initialProtocolId });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -63,6 +65,8 @@ export function ChatInterface({
         onLoadSession={handleLoadSession}
         onNewChat={handleNewChat}
         onClose={() => setSidebarOpen(false)}
+        onRenameSession={renameSession}
+        onDeleteSession={deleteSession}
       />
 
       {/* Main Chat Area */}
