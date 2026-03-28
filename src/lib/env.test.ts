@@ -13,7 +13,9 @@ describe("env validation", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "test-key");
     const { coreEnv } = await import("./env");
-    expect(() => coreEnv()).toThrow("Missing or invalid environment variables (core)");
+    expect(() => coreEnv()).toThrow(
+      "Missing or invalid environment variables (core)",
+    );
   });
 
   it("coreEnv() throws when URL is not a valid URL", async () => {
@@ -54,5 +56,23 @@ describe("env validation", () => {
     const { serverEnv } = await import("./env");
     const env = serverEnv();
     expect(env.PINECONE_INDEX).toBe("craftwell");
+  });
+
+  it("clientEnv() throws when NEXT_PUBLIC_SUPABASE_URL is missing", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "test-key");
+    const { clientEnv } = await import("./env");
+    expect(() => clientEnv()).toThrow(
+      "Missing or invalid environment variables (client)",
+    );
+  });
+
+  it("clientEnv() succeeds with valid variables", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://abc.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "test-key");
+    const { clientEnv } = await import("./env");
+    const env = clientEnv();
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://abc.supabase.co");
+    expect(env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBe("test-key");
   });
 });
