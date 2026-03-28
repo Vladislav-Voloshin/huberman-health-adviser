@@ -9,6 +9,7 @@ import { useSyncExternalStore } from "react";
 
 const navItems = [
   { href: "/protocols", label: "Protocols", icon: "📋" },
+  { href: "/protocols/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/chat", label: "Chat", icon: "💬" },
   { href: "/profile", label: "Profile", icon: "👤" },
 ];

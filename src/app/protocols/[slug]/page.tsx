@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProtocolDetail } from "@/components/protocols/protocol-detail";
+import { RelatedProtocols } from "@/components/protocols/related-protocols";
 
 export async function generateMetadata({
   params,
@@ -62,6 +63,15 @@ export default async function ProtocolDetailPage({
     isActive = userProtocol?.is_active ?? false;
   }
 
+  // Fetch related protocols (same category, excluding current)
+  const { data: relatedProtocols } = await supabase
+    .from("protocols")
+    .select("*")
+    .eq("category", protocol.category)
+    .neq("slug", slug)
+    .order("effectiveness_rank")
+    .limit(4);
+
   return (
     <AppShell>
       <ProtocolDetail
@@ -70,6 +80,9 @@ export default async function ProtocolDetailPage({
         isActive={isActive}
         isLoggedIn={!!user}
       />
+      <div className="max-w-3xl mx-auto px-4 pb-6">
+        <RelatedProtocols protocols={relatedProtocols || []} />
+      </div>
     </AppShell>
   );
 }
