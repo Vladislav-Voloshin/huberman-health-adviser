@@ -28,7 +28,11 @@ export default function AuthPage() {
           <CardDescription>Sign in to access your health protocols</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SocialLoginButton provider="google" onClick={() => auth.handleSocialLogin("google")} />
+          <SocialLoginButton
+            provider="google"
+            onClick={() => auth.handleSocialLogin("google")}
+            disabled={auth.socialLoading || auth.loading}
+          />
 
           <div className="relative">
             <Separator />

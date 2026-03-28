@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 interface SocialLoginButtonProps {
   provider: "google" | "apple";
   onClick: () => void;
+  disabled?: boolean;
 }
 
 const GOOGLE_ICON = (
-  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
     <path
       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
       fill="#4285F4"
@@ -33,9 +34,14 @@ const LABELS: Record<string, string> = {
   apple: "Continue with Apple",
 };
 
-export function SocialLoginButton({ provider, onClick }: SocialLoginButtonProps) {
+export function SocialLoginButton({ provider, onClick, disabled }: SocialLoginButtonProps) {
   return (
-    <Button variant="outline" className="w-full" onClick={onClick}>
+    <Button
+      variant="outline"
+      className="w-full h-11 text-base font-medium"
+      onClick={onClick}
+      disabled={disabled}
+    >
       {provider === "google" && GOOGLE_ICON}
       {LABELS[provider]}
     </Button>
