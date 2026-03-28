@@ -10,6 +10,7 @@ import { TourOverlay } from "@/components/tour/tour-overlay";
 
 const navItems = [
   { href: "/protocols", label: "Protocols", icon: "📋", tourId: "protocols-nav" },
+  { href: "/protocols/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/chat", label: "Chat", icon: "💬", tourId: "chat-nav" },
   { href: "/profile", label: "Profile", icon: "👤", tourId: "profile-nav" },
 ];

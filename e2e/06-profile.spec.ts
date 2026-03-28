@@ -5,13 +5,14 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { signInTestUser, TEST_USER } from "./helpers";
+import { signInTestUser, gotoAuthenticated, TEST_USER } from "./helpers";
 
 test.describe("Profile Page", () => {
   test.beforeEach(async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/profile");
-    await page.waitForLoadState("domcontentloaded");
+    await gotoAuthenticated(page, "/profile");
+    // Wait for the profile to fully render (not just the loading skeleton)
+    await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
   });
 
   test("displays account section with email", async ({ page }) => {
@@ -20,26 +21,15 @@ test.describe("Profile Page", () => {
   });
 
   test("shows Account information card", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Account") || content?.includes("account")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Account/i);
   });
 
   test("shows Health Profile section", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Health") || content?.includes("Profile")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Health|Profile/i);
   });
 
   test("shows My Protocol Stack section", async ({ page }) => {
-    const content = await page.innerText("body");
-    expect(
-      content?.includes("Protocol") ||
-        content?.includes("protocol") ||
-        content?.includes("Browse Protocols")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Protocol|Browse Protocols/i);
   });
 
   test("has sign out button", async ({ page }) => {
@@ -58,20 +48,50 @@ test.describe("Profile Page", () => {
   });
 
   test("protocol stack section exists on profile", async ({ page }) => {
-    const content = await page.innerText("body");
-    // Should mention protocols section — either active protocols or browse link
-    expect(
-      content?.includes("Protocol") ||
-        content?.includes("protocol") ||
-        content?.includes("Browse")
-    ).toBeTruthy();
+    await expect(page.locator("body")).toContainText(/Protocol|Browse/i);
+  });
+});
+
+test.describe("Delete Account", () => {
+  test.beforeEach(async ({ page }) => {
+    await signInTestUser(page);
+    await gotoAuthenticated(page, "/profile");
+    // Wait for the profile to fully render (not just the loading skeleton)
+    await page.getByText(TEST_USER.email).waitFor({ timeout: 15000 });
+  });
+
+  test("shows Danger Zone section with delete button", async ({ page }) => {
+    await expect(page.locator("body")).toContainText("Danger Zone");
+    const deleteBtn = page.getByRole("button", { name: /delete account/i });
+    await expect(deleteBtn).toBeVisible();
+  });
+
+  test("delete dialog requires typing DELETE to confirm", async ({ page }) => {
+    const deleteBtn = page.getByRole("button", { name: /delete account/i });
+    await deleteBtn.click();
+
+    // Dialog should appear
+    await expect(page.getByText("Delete your account?")).toBeVisible();
+
+    // Confirm button should be disabled until "DELETE" is typed
+    const confirmBtn = page.getByRole("button", { name: /permanently delete/i });
+    await expect(confirmBtn).toBeDisabled();
+
+    // Type wrong text — button stays disabled
+    const input = page.getByPlaceholder("Type DELETE to confirm");
+    await input.fill("nope");
+    await expect(confirmBtn).toBeDisabled();
+
+    // Type correct text — button enables
+    await input.fill("DELETE");
+    await expect(confirmBtn).toBeEnabled();
   });
 });
 
 test.describe("Profile Navigation", () => {
   test("bottom nav Profile link navigates to profile", async ({ page }) => {
     await signInTestUser(page);
-    await page.goto("/protocols");
+    await gotoAuthenticated(page, "/protocols");
     await page.waitForLoadState("domcontentloaded");
 
     // Click profile in bottom nav (👤 icon or "Profile" text)

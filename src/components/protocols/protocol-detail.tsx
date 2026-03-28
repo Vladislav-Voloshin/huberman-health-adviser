@@ -6,6 +6,7 @@ import { ProtocolHeader } from "./protocol-header";
 import { ProtocolProgress } from "./protocol-progress";
 import { ProtocolChecklist } from "./protocol-checklist";
 import { ProtocolChatCta } from "./protocol-chat-cta";
+import { ProtocolNotes } from "./protocol-notes";
 import { useProtocolCompletions } from "./use-protocol-completions";
 import type { Protocol, ProtocolTool } from "@/lib/types/database";
 
@@ -75,6 +76,8 @@ export function ProtocolDetail({
         togglingToolId={togglingToolId}
         onToggle={toggleToolCompletion}
       />
+
+      {isLoggedIn && <ProtocolNotes protocolId={protocol.id} />}
 
       <ProtocolChatCta protocolId={protocol.id} />
     </div>
