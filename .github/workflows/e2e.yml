@@ -33,7 +33,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Apply database migrations
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+        if: env.SUPABASE_ACCESS_TOKEN != ''
         run: |
           npx supabase link --project-ref xoybijzmusbzpgzfvppu
           for f in supabase/migrations/*.sql; do
