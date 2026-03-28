@@ -65,7 +65,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      router.push("/protocols");
+      router.push("/protocols?tour=1");
     } catch (err) {
       console.error("Onboarding error:", err);
       setError("Something went wrong. Please try again.");
