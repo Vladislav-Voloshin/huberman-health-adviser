@@ -32,6 +32,17 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Apply database migrations
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        run: |
+          npx supabase link --project-ref xoybijzmusbzpgzfvppu
+          for f in supabase/migrations/*.sql; do
+            echo "Applying $f..."
+            npx supabase db query --linked "$(cat "$f")" 2>&1 | tail -3 || echo "  (already applied or skipped)"
+          done
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
       - name: Build application
         run: npm run build
         env:
