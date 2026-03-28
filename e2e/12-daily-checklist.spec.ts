@@ -16,7 +16,7 @@ test.describe("Daily Checklist", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Get the href of the first protocol and navigate directly
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     const href = await firstCard.getAttribute("href");
     await page.goto(href!);
     // Wait for protocol title heading to render (server-side fetch complete)

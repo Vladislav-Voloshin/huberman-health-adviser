@@ -24,7 +24,7 @@ test.describe("P0 Happy Path: Returning User Login → Protocols", () => {
     await expect(page).toHaveURL(/\/protocols/);
 
     // Should see protocol cards
-    const cards = page.locator("a[href^='/protocols/']");
+    const cards = page.locator("main a[href^='/protocols/']");
     await expect(cards.first()).toBeVisible({ timeout: 10000 });
   });
 });
@@ -38,7 +38,7 @@ test.describe("P0 Happy Path: Browse → Detail → Add to Stack", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Browse: wait for protocol cards to load from Supabase
-    const cards = page.locator("a[href^='/protocols/']");
+    const cards = page.locator("main a[href^='/protocols/']");
     await cards.first().waitFor({ timeout: 15000 });
     const cardCount = await cards.count();
     expect(cardCount).toBeGreaterThan(0);
@@ -74,8 +74,8 @@ test.describe("P0 Happy Path: Protocol → Chat about it", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Open a protocol (wait for cards to load first)
-    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
-    await page.locator("a[href^='/protocols/']").first().click();
+    await page.locator("main a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+    await page.locator("main a[href^='/protocols/']").first().click();
     await page.waitForURL(/\/protocols\/.+/);
 
     // Navigate to chat via bottom nav
@@ -181,17 +181,17 @@ test.describe("P0 Happy Path: Search and Filter Protocols", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for protocol cards to load before searching
-    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+    await page.locator("main a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
 
     // Use search
     const searchInput = page.getByPlaceholder("Search protocols...");
     await searchInput.fill("sleep");
 
     // Wait for debounced search results to appear
-    await expect(page.locator("a[href^='/protocols/']").first()).toBeVisible();
+    await expect(page.locator("main a[href^='/protocols/']").first()).toBeVisible();
 
     // Should show filtered results
-    const cards = page.locator("a[href^='/protocols/']");
+    const cards = page.locator("main a[href^='/protocols/']");
     const count = await cards.count();
     expect(count).toBeGreaterThan(0);
 
