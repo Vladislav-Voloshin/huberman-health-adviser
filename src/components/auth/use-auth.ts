@@ -3,13 +3,26 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+// Read and clear ?error= from the URL on first render (set by OAuth callback)
+function consumeOAuthError(): string {
+  if (typeof window === "undefined") return "";
+  const params = new URLSearchParams(window.location.search);
+  const errorParam = params.get("error");
+  if (errorParam) {
+    window.history.replaceState({}, "", "/auth");
+    return decodeURIComponent(errorParam);
+  }
+  return "";
+}
+
 export function useAuth() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [message, setMessage] = useState(consumeOAuthError);
   const [authMode, setAuthMode] = useState<"email" | "phone">("email");
   const [otpSent, setOtpSent] = useState(false);
 
@@ -48,7 +61,12 @@ export function useAuth() {
     setLoading(true);
     setMessage("");
     const { error } = await supabase.auth.signInWithOtp({ phone });
-    if (error) { setMessage(error.message); } else { setOtpSent(true); setMessage("We sent a 6-digit code to your phone."); }
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setOtpSent(true);
+      setMessage("We sent a 6-digit code to your phone.");
+    }
     setLoading(false);
   }
 
@@ -59,7 +77,6 @@ export function useAuth() {
     if (error) {
       setMessage(error.message);
     } else if (data.user) {
-      // Check if user has completed onboarding
       const { data: profile } = await supabase
         .from("users")
         .select("onboarding_completed")
@@ -71,11 +88,23 @@ export function useAuth() {
   }
 
   async function handleSocialLogin(provider: "google" | "apple") {
+    setSocialLoading(true);
+    setMessage("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
     });
-    if (error) setMessage(error.message);
+    if (error) {
+      setMessage(error.message);
+      setSocialLoading(false);
+    }
+    // On success the browser navigates away, so no need to reset loading
   }
 
   function switchAuthMode(mode: "email" | "phone") {
@@ -92,7 +121,7 @@ export function useAuth() {
 
   return {
     email, setEmail, phone, setPhone, otp, setOtp, password, setPassword,
-    loading, message, authMode, otpSent,
+    loading, socialLoading, message, authMode, otpSent,
     handleEmailSignUp, handleEmailSignIn, handlePhoneOtp, handleVerifyOtp,
     handleSocialLogin, switchAuthMode, resetOtp,
   };

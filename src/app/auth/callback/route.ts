@@ -4,20 +4,28 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const errorParam = searchParams.get("error_description") || searchParams.get("error");
   const next = searchParams.get("next") ?? "/onboarding";
+
+  // Handle OAuth provider errors (e.g. user denied consent)
+  if (errorParam) {
+    const encoded = encodeURIComponent(errorParam);
+    return NextResponse.redirect(`${origin}/auth?error=${encoded}`);
+  }
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Check if user has completed onboarding
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Use maybeSingle() — row may not exist yet for first-time OAuth users.
+        // The middleware will create it on the next request.
         const { data: profile } = await supabase
           .from("users")
           .select("onboarding_completed")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (profile?.onboarding_completed) {
           return NextResponse.redirect(`${origin}/protocols`);
@@ -27,5 +35,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth?error=Could not authenticate`);
+  return NextResponse.redirect(`${origin}/auth?error=Could+not+authenticate`);
 }
