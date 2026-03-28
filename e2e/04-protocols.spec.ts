@@ -17,7 +17,7 @@ test.describe("Protocol Listing", () => {
       await page.waitForLoadState("domcontentloaded");
     }
     // Wait for protocol cards to load from Supabase
-    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+    await page.locator("main a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
   });
 
   test("displays protocols page with title", async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe("Protocol Listing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for protocol cards to load from Supabase before checking filters
-    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+    await page.locator("main a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
 
     const content = await page.innerText("body");
     expect(content).toContain("All");
@@ -50,7 +50,7 @@ test.describe("Protocol Listing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for cards to render from Supabase
-    const cards = page.locator("a[href^='/protocols/']");
+    const cards = page.locator("main a[href^='/protocols/']");
     await cards.first().waitFor({ timeout: 15000 });
     const count = await cards.count();
     expect(count).toBeGreaterThan(0);
@@ -61,7 +61,7 @@ test.describe("Protocol Listing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for cards to load
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     const cardText = await firstCard.textContent();
     expect(cardText?.length).toBeGreaterThan(5);
@@ -72,8 +72,8 @@ test.describe("Protocol Listing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for cards to load, then count
-    await page.locator("a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
-    const allCards = await page.locator("a[href^='/protocols/']").count();
+    await page.locator("main a[href^='/protocols/']").first().waitFor({ timeout: 15000 });
+    const allCards = await page.locator("main a[href^='/protocols/']").count();
 
     // Click a specific category filter (Sleep)
     const sleepButton = page.getByRole("button", { name: /sleep/i });
@@ -81,7 +81,7 @@ test.describe("Protocol Listing", () => {
     await sleepButton.click();
 
     // Wait for filtered results to render
-    await expect(page.locator("a[href^='/protocols/']").first()).toBeVisible();
+    await expect(page.locator("main a[href^='/protocols/']").first()).toBeVisible();
 
     // Should show fewer or equal protocols
     const filteredCards = await page
@@ -94,7 +94,7 @@ test.describe("Protocol Listing", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     const href = await firstCard.getAttribute("href");
 
@@ -116,7 +116,7 @@ test.describe("Protocol Detail", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
@@ -131,7 +131,7 @@ test.describe("Protocol Detail", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
@@ -147,7 +147,7 @@ test.describe("Protocol Detail", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
@@ -171,7 +171,7 @@ test.describe("Protocol Detail", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
@@ -186,7 +186,7 @@ test.describe("Protocol Detail", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
@@ -211,7 +211,7 @@ test.describe("Protocol Detail", () => {
     await page.goto("/protocols");
     await page.waitForLoadState("domcontentloaded");
 
-    const firstCard = page.locator("a[href^='/protocols/']").first();
+    const firstCard = page.locator("main a[href^='/protocols/']").first();
     await firstCard.waitFor({ timeout: 15000 });
     await firstCard.click();
     await page.waitForURL(/\/protocols\/.+/);
