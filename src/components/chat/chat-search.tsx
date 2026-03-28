@@ -25,19 +25,33 @@ export function ChatSearch({ onSelectResult }: ChatSearchProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const latestQueryRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const search = useCallback(async (q: string) => {
     const trimmed = q.trim();
     latestQueryRef.current = trimmed;
+
+    // Abort any in-flight request so stale responses never call setState
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
 
     if (trimmed.length < 2) {
       setResults([]);
       setShowResults(false);
       return;
     }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setSearching(true);
     try {
-      const res = await fetch(`/api/chat/search?q=${encodeURIComponent(trimmed)}`);
+      const res = await fetch(
+        `/api/chat/search?q=${encodeURIComponent(trimmed)}`,
+        { signal: controller.signal },
+      );
       if (latestQueryRef.current !== trimmed) return;
       if (res.ok) {
         const data = await res.json();
@@ -45,6 +59,10 @@ export function ChatSearch({ onSelectResult }: ChatSearchProps) {
         setResults(data.results);
         setShowResults(true);
       }
+    } catch (err: unknown) {
+      // Silently ignore aborted requests
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      throw err;
     } finally {
       if (latestQueryRef.current === trimmed) {
         setSearching(false);
@@ -66,6 +84,11 @@ export function ChatSearch({ onSelectResult }: ChatSearchProps) {
   }
 
   function clearSearch() {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    latestQueryRef.current = "";
     setQuery("");
     setResults([]);
     setShowResults(false);
