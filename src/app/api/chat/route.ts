@@ -9,6 +9,7 @@ import logger from "@/lib/logger";
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_HISTORY_TURNS = 20;
+const PINECONE_TIMEOUT_MS = 5000;
 
 const chatSchema = z.object({
   message: z.string().min(1, "Message is required").max(MAX_MESSAGE_LENGTH),
@@ -65,11 +66,14 @@ export async function POST(request: NextRequest) {
     // Fetch conversation history for multi-turn context
     const history = await fetchConversationHistory(supabase, currentSessionId!);
 
-    // Get relevant context via RAG
-    const { contextText, sources } = await fetchRAGContext(trimmedMessage, log);
+    // Get relevant context via RAG (degrades gracefully if Pinecone is unavailable)
+    const { contextText, sources, ragUnavailable } = await fetchRAGContext(
+      trimmedMessage,
+      log,
+    );
 
     // Build system prompt
-    let systemPrompt = buildSystemPrompt(contextText);
+    let systemPrompt = buildSystemPrompt(contextText, ragUnavailable);
 
     if (protocol_id) {
       // Single joined query to avoid N+1 (was 2 separate queries)
@@ -89,10 +93,11 @@ export async function POST(request: NextRequest) {
         const toolsList = tools?.length
           ? `\nKey tools/steps:\n${tools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}`
           : "";
-        systemPrompt += `\n\nThe user is asking about the "${protocol.title}" protocol.`
-          + `\nCategory: ${protocol.category} | Difficulty: ${protocol.difficulty} | Time: ${protocol.time_commitment}`
-          + `\nDescription: ${protocol.description}`
-          + toolsList;
+        systemPrompt +=
+          `\n\nThe user is asking about the "${protocol.title}" protocol.` +
+          `\nCategory: ${protocol.category} | Difficulty: ${protocol.difficulty} | Time: ${protocol.time_commitment}` +
+          `\nDescription: ${protocol.description}` +
+          toolsList;
       }
     }
 
@@ -122,8 +127,8 @@ export async function POST(request: NextRequest) {
           // Send meta (session_id + sources) only after stream starts successfully
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`
-            )
+              `data: ${JSON.stringify({ type: "meta", session_id: currentSessionId, sources })}\n\n`,
+            ),
           );
 
           for await (const event of response) {
@@ -135,8 +140,8 @@ export async function POST(request: NextRequest) {
               fullContent += text;
               controller.enqueue(
                 encoder.encode(
-                  `data: ${JSON.stringify({ type: "text", text })}\n\n`
-                )
+                  `data: ${JSON.stringify({ type: "text", text })}\n\n`,
+                ),
               );
             }
           }
@@ -145,13 +150,12 @@ export async function POST(request: NextRequest) {
           log.error({ err }, "Stream error");
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ type: "error", error: "Failed to generate response" })}\n\n`
-            )
+              `data: ${JSON.stringify({ type: "error", error: "Failed to generate response" })}\n\n`,
+            ),
           );
         }
 
-        // [BUG 3 FIX] Run post-stream DB operations in parallel with error
-        // isolation so one failure does not block the other or crash the stream.
+        // Run post-stream DB operations in parallel with error isolation
         try {
           const cleanupOps: PromiseLike<unknown>[] = [];
 
@@ -189,7 +193,7 @@ export async function POST(request: NextRequest) {
         }
 
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
+          encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`),
         );
         controller.close();
       },
@@ -210,7 +214,7 @@ export async function POST(request: NextRequest) {
 /** Fetch prior messages in this session to provide multi-turn context. */
 async function fetchConversationHistory(
   supabase: Awaited<ReturnType<typeof requireAuth>>["supabase"],
-  sessionId: string
+  sessionId: string,
 ): Promise<{ role: "user" | "assistant"; content: string }[]> {
   const { data, error } = await supabase
     .from("chat_messages")
@@ -228,14 +232,48 @@ async function fetchConversationHistory(
     .reverse();
 }
 
-/** Fetch RAG context from Pinecone for the given query. */
+/** Run an async operation with a timeout. Rejects if it takes too long. */
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms,
+    );
+    promise.then(
+      (val) => {
+        clearTimeout(timer);
+        resolve(val);
+      },
+      (err: unknown) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+/** Fetch RAG context from Pinecone for the given query.
+ *  If Pinecone is down or times out, returns empty context with a degradation flag. */
 async function fetchRAGContext(query: string, log: Pick<typeof logger, "warn">) {
   let contextText = "";
   let sources: { type: string; title: string; chunk_id: string }[] = [];
+  let ragUnavailable = false;
 
   try {
-    const embedding = await getEmbedding(query);
-    const matches = await queryVectors(embedding, 5);
+    const embedding = await withTimeout(
+      getEmbedding(query),
+      PINECONE_TIMEOUT_MS,
+      "Embedding",
+    );
+    const matches = await withTimeout(
+      queryVectors(embedding, 5),
+      PINECONE_TIMEOUT_MS,
+      "Pinecone query",
+    );
 
     sources = matches.map((m) => ({
       type: (m.metadata?.source_type as string) || "unknown",
@@ -248,14 +286,21 @@ async function fetchRAGContext(query: string, log: Pick<typeof logger, "warn">) 
       .filter(Boolean)
       .join("\n\n---\n\n");
   } catch (err) {
-    log.warn({ err }, "RAG unavailable");
+    log.warn(
+      { err },
+      "RAG unavailable — continuing without vector search context",
+    );
+    ragUnavailable = true;
   }
 
-  return { contextText, sources };
+  return { contextText, sources, ragUnavailable };
 }
 
 /** Build the system prompt with optional RAG context. */
-function buildSystemPrompt(contextText: string): string {
+function buildSystemPrompt(
+  contextText: string,
+  ragUnavailable: boolean,
+): string {
   let prompt = `You are Craftwell, a science-based health adviser.
 You provide evidence-based, practical health advice drawn from neuroscience and peer-reviewed research.
 
@@ -266,6 +311,13 @@ Key guidelines:
 - Always include safety disclaimers for supplements, exercise, or medical topics
 - If asked about something outside your knowledge, say so honestly
 - Be concise but thorough`;
+
+  if (ragUnavailable) {
+    prompt +=
+      "\n\nNote: The knowledge base vector search is currently unavailable. " +
+      "Answer based on your general training knowledge. Do not mention this limitation to the user " +
+      "unless they specifically ask about source quality.";
+  }
 
   if (contextText) {
     prompt += `\n\nRelevant context from the knowledge base:\n${contextText}`;

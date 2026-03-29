@@ -1,5 +1,5 @@
 /** Public routes that don't require authentication. */
-const PUBLIC_ROUTES = ["/", "/auth", "/protocols", "/privacy", "/terms"];
+const PUBLIC_ROUTES = ["/", "/auth", "/protocols", "/privacy", "/terms", "/api/health"];
 
 /** Static file extensions that should never be auth-gated. */
 const STATIC_EXTENSIONS = [".xml", ".txt", ".json", ".ico", ".png", ".svg", ".webp"];
