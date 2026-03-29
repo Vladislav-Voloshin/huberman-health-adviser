@@ -10,22 +10,34 @@ concurrency:
 
 jobs:
   codex-review:
-    # Skip entire workflow for draft PRs — avoids noisy "skipped" runs on every push
-    if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    outputs:
-      final_message: ${{ steps.run_codex.outputs.final-message }}
+      issues: write
+      pull-requests: write
 
     steps:
+      - name: Decide whether to review this PR
+        id: review_gate
+        env:
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "should_review=false" >> "$GITHUB_OUTPUT"
+            echo "Draft PR detected; skipping Codex review work."
+          else
+            echo "should_review=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout PR head
+        if: ${{ steps.review_gate.outputs.should_review == 'true' }}
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
       - name: Pre-fetch base and head refs
+        if: ${{ steps.review_gate.outputs.should_review == 'true' }}
         env:
           PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -35,6 +47,7 @@ jobs:
             "+refs/pull/$PR_NUMBER/head"
 
       - name: Build Codex review prompt
+        if: ${{ steps.review_gate.outputs.should_review == 'true' }}
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -62,6 +75,7 @@ jobs:
           } >> "$RUNNER_TEMP/codex-pr-review-prompt.md"
 
       - name: Run Codex review
+        if: ${{ steps.review_gate.outputs.should_review == 'true' }}
         id: run_codex
         continue-on-error: true
         uses: openai/codex-action@v1
@@ -71,19 +85,16 @@ jobs:
           sandbox: read-only
           safety-strategy: drop-sudo
 
-  post-feedback:
-    needs: codex-review
-    if: ${{ needs.codex-review.outputs.final_message != '' }}
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
-
-    steps:
       - name: Upsert Codex review comment
+        if: >-
+          ${{
+            steps.review_gate.outputs.should_review == 'true' &&
+            steps.run_codex.outcome == 'success' &&
+            steps.run_codex.outputs.final-message != ''
+          }}
         uses: actions/github-script@v7
         env:
-          CODEX_FINAL_MESSAGE: ${{ needs.codex-review.outputs.final_message }}
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
         with:
           github-token: ${{ github.token }}
           script: |
@@ -123,20 +134,12 @@ jobs:
               body,
             });
 
-  notify-approval:
-    needs: [codex-review, post-feedback]
-    if: >-
-      ${{
-        !github.event.pull_request.draft &&
-        needs.codex-review.result == 'success' &&
-        (needs.post-feedback.result == 'success' || needs.post-feedback.result == 'skipped')
-      }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
       - name: Send Telegram approval notification
+        if: >-
+          ${{
+            steps.review_gate.outputs.should_review == 'true' &&
+            steps.run_codex.outcome == 'success'
+          }}
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -144,7 +147,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_ACTION: ${{ github.event.action }}
           PR_REPO: ${{ github.repository }}
-          CODEX_FINAL_MESSAGE: ${{ needs.codex-review.outputs.final_message }}
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
