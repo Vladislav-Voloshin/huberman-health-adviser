@@ -13,13 +13,22 @@ export const TEST_USER = {
 };
 
 /**
+ * Click a segmented-control tab button (Sign In / Sign Up).
+ * These are plain <button> elements inside a `.bg-muted.p-1` container,
+ * NOT role="tab" — the auth page uses a custom segmented control.
+ */
+async function clickAuthTab(page: Page, label: "Sign In" | "Sign Up") {
+  await page.locator(".bg-muted.p-1 button", { hasText: label }).click();
+}
+
+/**
  * Sign up a new test user via the auth page
  */
 export async function signUpTestUser(page: Page) {
   await page.goto("/auth");
-  await page.getByRole("tab", { name: "Sign Up" }).click();
-  await page.getByPlaceholder("Email").fill(TEST_USER.email);
-  await page.getByPlaceholder("Password").fill(TEST_USER.password);
+  await clickAuthTab(page, "Sign Up");
+  await page.getByLabel("Email").fill(TEST_USER.email);
+  await page.getByLabel(/Password/).fill(TEST_USER.password);
   await page.getByRole("button", { name: "Create Account" }).click();
 }
 
@@ -33,9 +42,11 @@ export async function signUpTestUser(page: Page) {
 export async function signInTestUser(page: Page) {
   for (let attempt = 0; attempt < 2; attempt++) {
     await page.goto("/auth");
-    await page.getByRole("tab", { name: "Sign In" }).click();
-    await page.getByPlaceholder("Email").fill(TEST_USER.email);
-    await page.getByPlaceholder("Password").fill(TEST_USER.password);
+    // Default tab is "Sign In", but click it explicitly for clarity
+    await clickAuthTab(page, "Sign In");
+    await page.getByLabel("Email").fill(TEST_USER.email);
+    await page.getByLabel("Password", { exact: true }).fill(TEST_USER.password);
+    // The submit button is the last "Sign In" button (after the segmented control one)
     await page.getByRole("button", { name: "Sign In" }).click();
 
     try {
