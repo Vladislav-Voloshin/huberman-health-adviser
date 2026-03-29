@@ -55,6 +55,12 @@ export async function signInTestUser(page: Page) {
       await page.waitForURL((url) => !url.pathname.startsWith("/auth"), {
         timeout: 10000,
       });
+
+      // If redirected to onboarding, complete it so tests land on /protocols
+      if (page.url().includes("/onboarding")) {
+        await completeOnboarding(page);
+      }
+
       return; // success
     } catch {
       if (attempt === 1) throw new Error("signInTestUser: failed after 2 attempts");
