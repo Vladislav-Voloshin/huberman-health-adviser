@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : 4,
-  reporter: process.env.CI ? "github" : "html",
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "html",
   timeout: 30000,
   use: {
     baseURL: "http://localhost:3000",
@@ -15,12 +15,17 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: "smoke",
+      testMatch: /0[1-7]-.*\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "full",
       use: { ...devices["Desktop Chrome"] },
     },
   ],
   webServer: {
-    command: "npm run build && npx next start",
+    command: process.env.CI ? "npx next start" : "npm run build && npx next start",
     url: "http://localhost:3000",
     reuseExistingServer: true,
     timeout: 60000,
