@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { Message, ChatSession } from "./types";
+import clientLogger from "@/lib/client-logger";
 
 interface UseChatStreamOptions {
   userId: string;
@@ -206,7 +207,7 @@ export function useChatStream({ initialSessions, initialProtocolId }: UseChatStr
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
-      console.error("[Chat] Stream error:", err);
+      clientLogger.error("[Chat] Stream error:", err);
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
