@@ -176,7 +176,9 @@ export async function POST(request: NextRequest) {
           const results = await Promise.allSettled(cleanupOps);
           results.forEach((r, i) => {
             if (r.status === "rejected") {
-              log.error({ err: r.reason, op: i }, "Post-stream cleanup failed");
+              log.error({ err: r.reason, op: i }, "Post-stream cleanup rejected");
+            } else if (r.value?.error) {
+              log.error({ err: r.value.error, op: i }, "Post-stream cleanup returned error");
             }
           });
         } catch (cleanupErr) {
