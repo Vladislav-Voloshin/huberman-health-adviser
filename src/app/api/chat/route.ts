@@ -96,10 +96,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build messages array with history + current message
+    // [BUG 1 FIX] History already includes the saved user message from the
+    // insert above, so we must NOT append it again.
     const messages: { role: "user" | "assistant"; content: string }[] = [
       ...history,
-      { role: "user", content: trimmedMessage },
     ];
 
     // Stream response using SSE
@@ -150,26 +150,37 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Only save assistant message if we got actual content
-        if (fullContent) {
-          const { error: saveErr } = await supabase.from("chat_messages").insert({
-            session_id: currentSessionId,
-            role: "assistant",
-            content: fullContent,
-            sources: streamFailed ? undefined : sources,
-          });
-          if (saveErr) {
-            log.error({ err: saveErr }, "Failed to save assistant message");
-          }
-        }
+        // [BUG 3 FIX] Run post-stream DB operations in parallel with error
+        // isolation so one failure does not block the other or crash the stream.
+        try {
+          const cleanupOps: PromiseLike<unknown>[] = [];
 
-        // Always update session timestamp
-        const { error: updateErr } = await supabase
-          .from("chat_sessions")
-          .update({ updated_at: new Date().toISOString() })
-          .eq("id", currentSessionId);
-        if (updateErr) {
-          log.error({ err: updateErr }, "Failed to update session timestamp");
+          if (fullContent) {
+            cleanupOps.push(
+              supabase.from("chat_messages").insert({
+                session_id: currentSessionId,
+                role: "assistant",
+                content: fullContent,
+                sources: streamFailed ? undefined : sources,
+              })
+            );
+          }
+
+          cleanupOps.push(
+            supabase
+              .from("chat_sessions")
+              .update({ updated_at: new Date().toISOString() })
+              .eq("id", currentSessionId)
+          );
+
+          const results = await Promise.allSettled(cleanupOps);
+          results.forEach((r, i) => {
+            if (r.status === "rejected") {
+              log.error({ err: r.reason, op: i }, "Post-stream cleanup failed");
+            }
+          });
+        } catch (cleanupErr) {
+          log.error({ err: cleanupErr }, "Post-stream cleanup error");
         }
 
         controller.enqueue(
@@ -200,14 +211,16 @@ async function fetchConversationHistory(
     .from("chat_messages")
     .select("role, content")
     .eq("session_id", sessionId)
-    .order("created_at", { ascending: true })
+    // [BUG 2 FIX] Fetch descending so limit keeps newest context, then reverse.
+    .order("created_at", { ascending: false })
     .limit(MAX_HISTORY_TURNS * 2);
 
   if (error || !data) return [];
 
   return data
     .filter((m) => m.content && (m.role === "user" || m.role === "assistant"))
-    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
+    .reverse();
 }
 
 /** Fetch RAG context from Pinecone for the given query. */
