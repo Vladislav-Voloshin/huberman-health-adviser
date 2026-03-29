@@ -72,20 +72,20 @@ export async function POST(request: NextRequest) {
     let systemPrompt = buildSystemPrompt(contextText);
 
     if (protocol_id) {
-      const [{ data: protocol }, { data: tools }] = await Promise.all([
-        supabase
-          .from("protocols")
-          .select("title, description, category, difficulty, time_commitment")
-          .eq("id", protocol_id)
-          .single(),
-        supabase
-          .from("protocol_tools")
-          .select("name, description, effectiveness_rank")
-          .eq("protocol_id", protocol_id)
-          .order("effectiveness_rank"),
-      ]);
+      // Single joined query to avoid N+1 (was 2 separate queries)
+      const { data: protocol } = await supabase
+        .from("protocols")
+        .select(
+          "title, description, category, difficulty, time_commitment, protocol_tools(name, description, effectiveness_rank)"
+        )
+        .eq("id", protocol_id)
+        .order("effectiveness_rank", { referencedTable: "protocol_tools" })
+        .single();
 
       if (protocol) {
+        const tools = (protocol as Record<string, unknown>).protocol_tools as
+          | { name: string; description: string; effectiveness_rank: number }[]
+          | null;
         const toolsList = tools?.length
           ? `\nKey tools/steps:\n${tools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}`
           : "";

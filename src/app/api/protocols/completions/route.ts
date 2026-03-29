@@ -31,16 +31,24 @@ export async function GET(request: NextRequest) {
     // Default: get today's completions (using user's local date)
     const today = getLocalToday(request);
 
-    const { data: completions } = await supabase
+    const rawLimit = parseInt(searchParams.get("limit") || "100", 10);
+    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10));
+    const limit = Math.min(Math.max(1, rawLimit), 500);
+
+    const { data: completions, count } = await supabase
       .from("protocol_completions")
-      .select("tool_id")
+      .select("tool_id", { count: "exact" })
       .eq("user_id", user.id)
       .eq("protocol_id", protocolId)
-      .eq("completed_date", today);
+      .eq("completed_date", today)
+      .range(offset, offset + limit - 1);
+
+    const totalCount = count ?? 0;
 
     return NextResponse.json({
       completed_tool_ids: (completions || []).map((c) => c.tool_id),
       date: today,
+      hasMore: offset + limit < totalCount,
     });
   } catch (err) {
     return handleApiError(err, requestId);
