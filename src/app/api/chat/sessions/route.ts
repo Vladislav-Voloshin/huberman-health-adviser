@@ -39,9 +39,10 @@ export async function GET(request: NextRequest) {
     }
 
     // List all sessions with pagination
-    const rawLimit = parseInt(searchParams.get("limit") || "50", 10);
-    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10));
-    const limit = Math.min(Math.max(1, rawLimit), 200);
+    const parsedLimit = parseInt(searchParams.get("limit") || "50", 10);
+    const parsedOffset = parseInt(searchParams.get("offset") || "0", 10);
+    const limit = Math.min(Math.max(1, Number.isNaN(parsedLimit) ? 50 : parsedLimit), 200);
+    const offset = Math.max(0, Number.isNaN(parsedOffset) ? 0 : parsedOffset);
 
     // Fetch total count for pagination metadata
     const { count: total } = await supabase

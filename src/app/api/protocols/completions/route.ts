@@ -31,9 +31,10 @@ export async function GET(request: NextRequest) {
     // Default: get today's completions (using user's local date)
     const today = getLocalToday(request);
 
-    const rawLimit = parseInt(searchParams.get("limit") || "100", 10);
-    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10));
-    const limit = Math.min(Math.max(1, rawLimit), 500);
+    const parsedLimit = parseInt(searchParams.get("limit") || "100", 10);
+    const parsedOffset = parseInt(searchParams.get("offset") || "0", 10);
+    const limit = Math.min(Math.max(1, Number.isNaN(parsedLimit) ? 100 : parsedLimit), 500);
+    const offset = Math.max(0, Number.isNaN(parsedOffset) ? 0 : parsedOffset);
 
     const { data: completions, count } = await supabase
       .from("protocol_completions")
