@@ -45,7 +45,7 @@ export function RelatedProtocols({ protocols }: { protocols: Protocol[] }) {
           const Icon = meta.icon;
           return (
             <Link key={protocol.id} href={`/protocols/${protocol.slug}`}>
-              <Card className="h-full hover:border-border transition-colors">
+              <Card className="h-full shadow-sm dark:shadow-none hover:border-border transition-colors">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-start gap-2">
                     <div className={cn("w-6 h-6 flex items-center justify-center rounded-md shrink-0", meta.bg)}>

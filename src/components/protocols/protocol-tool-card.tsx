@@ -1,9 +1,50 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { useState } from "react";
+import { Check, Clock, Timer, Repeat } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProtocolTool } from "@/lib/types/database";
+
+const INSTRUCTIONS_TRUNCATE_THRESHOLD = 200;
+const INSTRUCTIONS_PREVIEW_LENGTH = 150;
+
+function parseInstructions(text: string) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  const numberedPattern = /^\d+\.\s+/;
+  const bulletPattern = /^[-•]\s+/;
+
+  const hasNumberedSteps = lines.some((l) => numberedPattern.test(l.trim()));
+  const hasBullets = lines.some((l) => bulletPattern.test(l.trim()));
+
+  if (hasNumberedSteps) {
+    const items = lines
+      .filter((l) => numberedPattern.test(l.trim()))
+      .map((l) => l.trim().replace(numberedPattern, ""));
+    return (
+      <ol className="list-decimal list-inside space-y-1.5">
+        {items.map((item, i) => (
+          <li key={i} className="leading-relaxed">{item}</li>
+        ))}
+      </ol>
+    );
+  }
+
+  if (hasBullets) {
+    const items = lines
+      .filter((l) => bulletPattern.test(l.trim()))
+      .map((l) => l.trim().replace(bulletPattern, ""));
+    return (
+      <ul className="list-disc list-inside space-y-1.5">
+        {items.map((item, i) => (
+          <li key={i} className="leading-relaxed">{item}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return <p className="whitespace-pre-wrap leading-relaxed">{text}</p>;
+}
 
 interface ProtocolToolCardProps {
   tool: ProtocolTool;
@@ -24,8 +65,10 @@ export function ProtocolToolCard({
   isToggling,
   onToggle,
 }: ProtocolToolCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLongInstructions = tool.instructions.length > INSTRUCTIONS_TRUNCATE_THRESHOLD;
   return (
-    <Card className={isCompleted ? "border-primary/30 bg-primary/5" : ""}>
+    <Card className={`${isCompleted ? "border-primary/30 bg-primary/5" : ""} ${index > 0 ? "border-t border-border/30" : ""}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start gap-3">
           {isLoggedIn && isActive ? (
@@ -62,16 +105,51 @@ export function ProtocolToolCard({
       </CardHeader>
       <CardContent className="pl-14">
         <div className="space-y-2 text-sm">
-          <p className="whitespace-pre-wrap">{tool.instructions}</p>
+          <div className="text-foreground/90">
+            {isLongInstructions && !isExpanded ? (
+              <>
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  {tool.instructions.slice(0, INSTRUCTIONS_PREVIEW_LENGTH).trimEnd()}...
+                </p>
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="text-primary text-xs font-medium mt-1 hover:underline"
+                >
+                  Show more
+                </button>
+              </>
+            ) : (
+              <>
+                {parseInstructions(tool.instructions)}
+                {isLongInstructions && (
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    className="text-primary text-xs font-medium mt-1 hover:underline"
+                  >
+                    Show less
+                  </button>
+                )}
+              </>
+            )}
+          </div>
           <div className="flex gap-2 flex-wrap mt-2">
             {tool.timing && (
-              <Badge variant="secondary">When: {tool.timing}</Badge>
+              <Badge variant="outline" className="text-foreground/80 border-border/50">
+                <Clock className="w-3 h-3 mr-1" />
+                When: {tool.timing}
+              </Badge>
             )}
             {tool.duration && (
-              <Badge variant="secondary">Duration: {tool.duration}</Badge>
+              <Badge variant="outline" className="text-foreground/80 border-border/50">
+                <Timer className="w-3 h-3 mr-1" />
+                Duration: {tool.duration}
+              </Badge>
             )}
             {tool.frequency && (
-              <Badge variant="secondary">Frequency: {tool.frequency}</Badge>
+              <Badge variant="outline" className="text-foreground/80 border-border/50">
+                <Repeat className="w-3 h-3 mr-1" />
+                Frequency: {tool.frequency}
+              </Badge>
             )}
           </div>
           {tool.notes && (

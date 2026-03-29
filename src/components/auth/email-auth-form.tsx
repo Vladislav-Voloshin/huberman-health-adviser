@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface EmailAuthFormProps {
   email: string;
@@ -11,6 +10,39 @@ interface EmailAuthFormProps {
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: () => void;
+}
+
+function FloatingInput({
+  id,
+  type,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  type: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder=" "
+        className="peer w-full rounded-lg border border-input bg-transparent px-3 pt-5 pb-2 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+      />
+      <label
+        htmlFor={id}
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-2.5 peer-focus:text-xs peer-focus:text-primary peer-[:not(:placeholder-shown)]:top-2.5 peer-[:not(:placeholder-shown)]:text-xs"
+      >
+        {label}
+      </label>
+    </div>
+  );
 }
 
 export function EmailAuthForm({
@@ -23,18 +55,20 @@ export function EmailAuthForm({
   onSubmit,
 }: EmailAuthFormProps) {
   return (
-    <div className="space-y-3">
-      <Input
+    <div className="space-y-4">
+      <FloatingInput
+        id="email"
         type="email"
-        placeholder="Email"
+        label="Email"
         value={email}
-        onChange={(e) => onEmailChange(e.target.value)}
+        onChange={onEmailChange}
       />
-      <Input
+      <FloatingInput
+        id="password"
         type="password"
-        placeholder={mode === "signup" ? "Password (min 6 characters)" : "Password"}
+        label={mode === "signup" ? "Password (min 6 characters)" : "Password"}
         value={password}
-        onChange={(e) => onPasswordChange(e.target.value)}
+        onChange={onPasswordChange}
       />
       <Button className="w-full" onClick={onSubmit} disabled={loading}>
         {loading

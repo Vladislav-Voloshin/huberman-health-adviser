@@ -209,7 +209,7 @@ export function ProtocolList({
                 key={protocol.id}
                 href={`/protocols/${protocol.slug}`}
               >
-                <Card className="hover:border-foreground/20 transition-all cursor-pointer group overflow-hidden h-full">
+                <Card className="shadow-sm dark:shadow-none hover:border-foreground/20 transition-all cursor-pointer group overflow-hidden h-full">
                   <div className="flex">
                     {/* Category accent bar */}
                     <div className={cn("w-1 shrink-0 rounded-l", meta.bg.replace("/10", "/40"))} />

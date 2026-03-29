@@ -17,6 +17,11 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/protocols/sleep-optimization")).toBe(true);
   });
 
+  it("allows /privacy and /terms", () => {
+    expect(isPublicRoute("/privacy")).toBe(true);
+    expect(isPublicRoute("/terms")).toBe(true);
+  });
+
   it("blocks authenticated-only routes", () => {
     expect(isPublicRoute("/dashboard")).toBe(false);
     expect(isPublicRoute("/profile")).toBe(false);
