@@ -18,7 +18,7 @@ test.describe("P0 Happy Path: Returning User Login → Protocols", () => {
     await page.locator(".bg-muted.p-1 button", { hasText: "Sign In" }).click();
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password", { exact: true }).fill(TEST_USER.password);
-    await page.getByRole("button", { name: "Sign In" }).click();
+    await page.getByRole("button", { name: "Sign In" }).last().click();
 
     await page.waitForURL("**/protocols", { timeout: 15000 });
     await expect(page).toHaveURL(/\/protocols/);
@@ -160,7 +160,7 @@ test.describe("P0 Happy Path: Sign Out & Re-Sign In", () => {
     await page.locator(".bg-muted.p-1 button", { hasText: "Sign In" }).click();
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password", { exact: true }).fill(TEST_USER.password);
-    await page.getByRole("button", { name: "Sign In" }).click();
+    await page.getByRole("button", { name: "Sign In" }).last().click();
 
     await page.waitForURL("**/protocols", { timeout: 15000 });
     await expect(page).toHaveURL(/\/protocols/);

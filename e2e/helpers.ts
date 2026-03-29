@@ -46,8 +46,9 @@ export async function signInTestUser(page: Page) {
     await clickAuthTab(page, "Sign In");
     await page.getByLabel("Email").fill(TEST_USER.email);
     await page.getByLabel("Password", { exact: true }).fill(TEST_USER.password);
-    // The submit button is the last "Sign In" button (after the segmented control one)
-    await page.getByRole("button", { name: "Sign In" }).click();
+    // Two "Sign In" buttons exist: segmented control (.bg-muted) and form submit.
+    // Use .last() to target the submit button.
+    await page.getByRole("button", { name: "Sign In" }).last().click();
 
     try {
       // Wait for redirect away from /auth

@@ -51,8 +51,9 @@ test.describe("Auth Page", () => {
     await clickAuthTab(page, "Sign In");
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+    // Submit button is the last "Sign In" button (segmented control is first)
     await expect(
-      page.getByRole("button", { name: "Sign In" })
+      page.getByRole("button", { name: "Sign In" }).last()
     ).toBeVisible();
   });
 
@@ -95,7 +96,7 @@ test.describe("Auth Page", () => {
     await clickAuthTab(page, "Sign In");
     await page.getByLabel("Email").fill("nonexistent@test.com");
     await page.getByLabel("Password", { exact: true }).fill("wrongpassword");
-    await page.getByRole("button", { name: "Sign In" }).click();
+    await page.getByRole("button", { name: "Sign In" }).last().click();
 
     // Should show an error message (Supabase API call may take time)
     await expect(page.getByText(/invalid|error|credentials/i)).toBeVisible({
