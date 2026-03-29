@@ -177,8 +177,11 @@ export async function POST(request: NextRequest) {
           results.forEach((r, i) => {
             if (r.status === "rejected") {
               log.error({ err: r.reason, op: i }, "Post-stream cleanup rejected");
-            } else if (r.value?.error) {
-              log.error({ err: r.value.error, op: i }, "Post-stream cleanup returned error");
+            } else {
+              const val = r.value as { error?: unknown } | undefined;
+              if (val?.error) {
+                log.error({ err: val.error, op: i }, "Post-stream cleanup returned error");
+              }
             }
           });
         } catch (cleanupErr) {
