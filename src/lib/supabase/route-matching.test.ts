@@ -33,4 +33,11 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/api/chat")).toBe(false);
     expect(isPublicRoute("/api/search")).toBe(false);
   });
+
+  it("allows static files (robots.txt, sitemap.xml, manifest.json)", () => {
+    expect(isPublicRoute("/robots.txt")).toBe(true);
+    expect(isPublicRoute("/sitemap.xml")).toBe(true);
+    expect(isPublicRoute("/manifest.json")).toBe(true);
+    expect(isPublicRoute("/favicon.ico")).toBe(true);
+  });
 });
