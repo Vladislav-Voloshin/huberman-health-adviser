@@ -57,8 +57,19 @@ jobs:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
 
+      - name: Determine E2E test scope
+        id: test-scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "project=smoke" >> "$GITHUB_OUTPUT"
+            echo "Running smoke tests only (PR)"
+          else
+            echo "project=full" >> "$GITHUB_OUTPUT"
+            echo "Running full test suite (push)"
+          fi
+
       - name: Run E2E tests
-        run: npx playwright test
+        run: npx playwright test --project=${{ steps.test-scope.outputs.project }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
