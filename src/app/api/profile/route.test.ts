@@ -279,13 +279,15 @@ describe("DELETE /api/profile", () => {
   });
 
   it("returns 500 when auth deletion fails", async () => {
+    // Auth deletion now happens LAST (after data cleanup)
+    // Mock data deletions as successful, then auth fails
     mockDeleteUser.mockResolvedValueOnce({ error: { message: "Admin auth failed" } });
 
     const req = makeRequest("DELETE");
     const res = await DELETE(req);
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Admin auth failed");
+    expect(body.error).toContain("auth removal failed");
   });
 
   it("returns 401 for unauthenticated request", async () => {

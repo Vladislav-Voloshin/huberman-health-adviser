@@ -67,13 +67,14 @@ function makeRequest(method: string, url = "http://localhost/api/chat/sessions")
 }
 
 /** Build a chainable Supabase query mock that terminates with the given result. */
-function queryChain(result: { data?: unknown; error?: unknown }) {
+function queryChain(result: { data?: unknown; error?: unknown; count?: number | null }) {
   const terminal = vi.fn().mockResolvedValue(result);
   const chain: Record<string, ReturnType<typeof vi.fn>> = {};
   chain.select = vi.fn().mockReturnValue(chain);
   chain.eq = vi.fn().mockReturnValue(chain);
   chain.in = vi.fn().mockReturnValue(chain);
   chain.order = vi.fn().mockReturnValue(chain);
+  chain.range = vi.fn().mockReturnValue(chain);
   chain.limit = terminal;
   chain.single = terminal;
   chain.delete = vi.fn().mockReturnValue(chain);
@@ -94,31 +95,41 @@ describe("GET /api/chat/sessions", () => {
     });
   });
 
-  it("returns sessions list", async () => {
+  it("returns sessions list with pagination metadata", async () => {
     const mockSessions = [
       { id: "s-1", title: "Chat 1", protocol_id: null, created_at: "2026-03-28", updated_at: "2026-03-28" },
       { id: "s-2", title: "Chat 2", protocol_id: null, created_at: "2026-03-27", updated_at: "2026-03-27" },
     ];
-    mockFrom.mockReturnValue(queryChain({ data: mockSessions }));
+    // First call: count query, second call: data query
+    mockFrom
+      .mockReturnValueOnce(queryChain({ data: null, count: 2 }))
+      .mockReturnValueOnce(queryChain({ data: mockSessions }));
 
     const res = await GET(makeRequest("GET"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.sessions).toEqual(mockSessions);
     expect(body.sessions).toHaveLength(2);
+    expect(body.total).toBe(2);
+    expect(body.hasMore).toBe(false);
   });
 
   it("returns empty sessions list when none exist", async () => {
-    mockFrom.mockReturnValue(queryChain({ data: [] }));
+    mockFrom
+      .mockReturnValueOnce(queryChain({ data: null, count: 0 }))
+      .mockReturnValueOnce(queryChain({ data: [] }));
 
     const res = await GET(makeRequest("GET"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.sessions).toEqual([]);
+    expect(body.total).toBe(0);
   });
 
   it("returns null-safe empty list when data is null", async () => {
-    mockFrom.mockReturnValue(queryChain({ data: null }));
+    mockFrom
+      .mockReturnValueOnce(queryChain({ data: null, count: 0 }))
+      .mockReturnValueOnce(queryChain({ data: null }));
 
     const res = await GET(makeRequest("GET"));
     expect(res.status).toBe(200);
